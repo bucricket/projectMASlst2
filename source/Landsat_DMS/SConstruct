@@ -1,0 +1,35 @@
+#!python
+
+import os
+import platform
+import subprocess
+
+AddOption('--prefix',
+          dest='prefix',
+          type='string',
+          nargs=1,
+          action='store',
+          metavar='DIR',
+          help='installation prefix')
+env = Environment(PREFIX = GetOption('prefix'))
+prefix  = os.environ.get('PREFIX')
+base1 = os.path.abspath(os.path.join(prefix,os.pardir))
+base = os.path.join(base1,'work')
+sourcePath = os.path.join(base,'source')
+binPath = os.path.join(prefix,'bin')
+
+env.Replace(CC = os.path.join(binPath,'gcc')) 
+env.Append(CCFLAGS = ['-static','-g','-O3'])
+
+env.Append(LIBPATH = [os.path.join(sourcePath,'lib')])
+env.Append(CPPPATH = [os.path.join(sourcePath,'include'),os.path.join(prefix,'include')])
+env.Append(LIBS = ['geotiff','tiff','z','jpeg','m','lzma'])
+
+combineModels = env.Program(target='combine_models', source=['utility.c','sensor.c','combine_models.c'])
+getSamples = env.Program(target='get_samples', source=['utility.c','sensor.c','get_samples.c'])
+predict_fineT = env.Program(target='predict_fineT', source=['utility.c','sensor.c','predict_fineT.c'])
+env.Append(LIBS = ['m'])
+th_intC2floatK = env.Program(target='th_intC2floatK', source=['th_intC2floatK.c'])
+
+env.Install(binPath, [combineModels,getSamples,predict_fineT,th_intC2floatK])
+env.Alias('install', binPath)
