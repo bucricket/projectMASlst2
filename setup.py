@@ -5,8 +5,7 @@ import subprocess
 import os
 
 # set project base directory structure
-base = os.getcwd()
-    
+base = os.getcwd()   
 try:
     from setuptools import setup
     setup_kwargs = {'entry_points': {'console_scripts':['processlst=processlst.processlst:main']}}
