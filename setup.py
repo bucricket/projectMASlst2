@@ -68,6 +68,7 @@ setup(
     py_modules=['processlst.processlst','processlst.utils',
                 'processlst.lndlst_dms','processlst.landsatTools',
                 'processlst.processData'],
+    #packages= ['processlst'],
     platforms='Posix; MacOS X; Windows',
     license='BSD 3-Clause',
     classifiers=[
