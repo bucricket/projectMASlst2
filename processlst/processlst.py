@@ -250,6 +250,8 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
 def main():
     
     parser = argparse.ArgumentParser()
+    parser.add_argument("lat", type=float, help="latitude")
+    parser.add_argument("lon", type=float, help="longitude")
     parser.add_argument("start_date", type=str, help="Start date yyyy-mm-dd")
     parser.add_argument("end_date", type=str, help="Start date yyyy-mm-dd")
     parser.add_argument("cloud", type=int, help="cloud coverage")
