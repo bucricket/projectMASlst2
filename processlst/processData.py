@@ -17,16 +17,15 @@ from .utils import folders,writeArray2Tiff,getHTTPdata
 from pydap.cas import urs
 from pydap import client
 
-
+base = os.getcwd()
+cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA"))
 
 class RTTOV:
-    def __init__(self, filepath,username,password):
-        base = os.getcwd()
-        Folders = folders(base)  
+    def __init__(self, productIDpath,username,password): 
         self.earthLoginUser = username
         self.earthLoginPass = password   
-        self.landsatSR = Folders['landsat_SR']
-        meta = landsat_metadata(filepath)
+        self.productIDpath = productIDpath
+        meta = landsat_metadata(os.path.join('%s_MTL.txt' % self.productIDpath))
         self.productID = meta.LANDSAT_PRODUCT_ID
         self.scene = self.productID.split('_')[2]
         self.ulLat = meta.CORNER_UL_LAT_PRODUCT
@@ -209,29 +208,22 @@ class RTTOV:
     
 
 class Landsat:
-    def __init__(self, filepath,username,password):
+    def __init__(self, productIDpath,username,password):
         base = os.getcwd()
         Folders = folders(base)    
         self.earthLoginUser = username
         self.earthLoginPass = password
-        self.landsatLST = Folders['landsat_LST']
-        self.landsatSR = Folders['landsat_SR']
+        self.productIDpath = productIDpath
         self.landsatTemp = Folders['landsat_Temp']
         self.asterEmissivityBase= Folders['asterEmissivityBase']
         self.ASTERmosaicTemp = Folders['ASTERmosaicTemp']
         self.landsatDataBase = Folders['landsatDataBase']
         self.landsatEmissivityBase = Folders['landsatEmissivityBase']
-#        self.sceneID = filepath.split(os.sep)[-1][:-8]
-#        self.scene = self.sceneID[3:9]
-#        self.yeardoy = self.sceneID[9:16]
-        
-#        meta = landsat_metadata(os.path.join(self.landsatSR, 
-#                                                          self.scene,'%s_MTL.txt' % self.sceneID))
-        meta = landsat_metadata(filepath)
+        meta = landsat_metadata(os.path.join('%s_MTL.txt' % self.productIDpath))
         self.productID = meta.LANDSAT_PRODUCT_ID
         self.sceneID = meta.LANDSAT_SCENE_ID
         self.scene = self.productID.split('_')[2]
-        self.ls = GeoTIFF(os.path.join(self.landsatSR, self.scene,'%s_sr_band1.tif' % self.productID))
+        self.ls = GeoTIFF(os.path.join('%s_sr_band1.tif' % self.productIDpath))
         self.proj4 = self.ls.proj4
         self.inProj4 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
         self.ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT
@@ -306,7 +298,7 @@ class Landsat:
     def processLandsatLST(self,tirsRttov,merraDict):
         
         # Landsat brightness temperature
-        landsat = os.path.join(self.landsatTemp,"%s_bt_band10.tif" % self.productID)
+        landsat = os.path.join("%s_bt_band10.tif" % self.productIDpath)
         Lg = gdal.Open(landsat)
         BT= Lg.ReadAsArray()/10.
         #=====get radiance from BT=========

@@ -19,15 +19,15 @@ from joblib import Parallel, delayed
 import shutil
 
 base = os.getcwd()
+cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA"))
 Folders = folders(base)   
-landsat_SR = Folders['landsat_SR']
 landsat_temp = Folders['landsat_Temp']
-landsat_LST = Folders['landsat_LST']
+#landsat_LST = Folders['landsat_LST']
 # global prediction
 
 
-def perpareDMSinp(productID,s_row,s_col,locglob,ext):
-    meta = landsat_metadata(os.path.join(landsat_temp,'%s_MTL.txt' % productID))
+def perpareDMSinp(productIDpath,s_row,s_col,locglob,ext):
+    meta = landsat_metadata(os.path.join('%s_MTL.txt' % productIDpath))
     sceneID = meta.LANDSAT_SCENE_ID
     blue = os.path.join(landsat_temp,"%s_sr_band2.blue.dat" % sceneID)
     green = os.path.join(landsat_temp,"%s_sr_band3.green.dat" % sceneID)
@@ -91,8 +91,8 @@ def perpareDMSinp(productID,s_row,s_col,locglob,ext):
     file.write("end")
     file.close()
 
-def finalDMSinp(productID,ext):
-    meta = landsat_metadata(os.path.join(landsat_temp,'%s_MTL.txt' % productID))
+def finalDMSinp(productIDpath,ext):
+    meta = landsat_metadata(os.path.join('%s_MTL.txt' % productIDpath))
     sceneID = meta.LANDSAT_SCENE_ID
     blue = os.path.join(landsat_temp,"%s_sr_band2.blue.dat" % sceneID)
     green = os.path.join(landsat_temp,"%s_sr_band3.green.dat" % sceneID)
@@ -156,7 +156,7 @@ def finalDMSinp(productID,ext):
     file.write("end")
     file.close()   
     
-def localPred(productID,th_res,s_row,s_col):
+def localPred(productIDpath,th_res,s_row,s_col):
 
     wsize1 = 200
     overlap1 = 20
@@ -170,7 +170,7 @@ def localPred(productID,th_res,s_row,s_col):
     os_col = s_col - overlap
     oe_row = e_row +overlap
     oe_col = e_col + overlap
-    perpareDMSinp(productID,s_row,s_col,"local","bin")
+    perpareDMSinp(productIDpath,s_row,s_col,"local","bin")
     #dmsfn = os.path.join(landsat_temp,"dms_%d_%d.inp" % (s_row,s_col))
     dmsfn = "dms_%d_%d.inp" % (s_row,s_col)
     # do cubist prediction
@@ -279,8 +279,9 @@ def localPredSK(sceneID,th_res,s_row,s_col):
     "%d" % e_row, "%d" % e_col])
     return localPred
     
-def getSharpenedLST(metaFN):
-    meta = landsat_metadata(metaFN)
+def getSharpenedLST(productIDpath,sat):
+    landsatCacheDir = os.path.join(cacheDir,"LANDSAT")
+    meta = landsat_metadata(os.path.join('%s_MTL.txt' % productIDpath))
     sceneID =meta.LANDSAT_SCENE_ID
     productID = meta.LANDSAT_PRODUCT_ID
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
@@ -288,7 +289,7 @@ def getSharpenedLST(metaFN):
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT+(sw_res*0.5)
     xres = meta.GRID_CELL_SIZE_REFLECTIVE
     yres = meta.GRID_CELL_SIZE_REFLECTIVE   
-    ls = GeoTIFF(os.path.join(landsat_temp,'%s_sr_band1.tif' % productID))
+    ls = GeoTIFF(os.path.join('%s_sr_band1.tif' % productIDpath))
     th_res = meta.GRID_CELL_SIZE_THERMAL
     if sceneID[2]=="5":
         th_res = 120
@@ -303,7 +304,7 @@ def getSharpenedLST(metaFN):
     dmsfn = "dms.inp"
     # create dms.inp
     print("========GLOBAL PREDICTION===========")
-    finalDMSinp(productID,"global")  
+    finalDMSinp(productIDpath,"global")  
     # do global prediction
     subprocess.call(["get_samples","%s" % dmsfn])
     
@@ -322,10 +323,15 @@ def getSharpenedLST(metaFN):
     wsize1 = 200
     wsize = int((wsize1*120)/th_res)
     # process local parts in parallel
-    Parallel(n_jobs=njobs, verbose=5)(delayed(localPred)(productID,th_res,s_row,s_col) for s_col in range(0,int(ncols/wsize)*wsize,wsize) for s_row in range(0,int(nrows/wsize)*wsize,wsize))
+    Parallel(n_jobs=njobs, verbose=5)(delayed(localPred)(productIDpath,th_res,s_row,s_col) for s_col in range(0,int(ncols/wsize)*wsize,wsize) for s_row in range(0,int(nrows/wsize)*wsize,wsize))
     # put the parts back together
     finalFile = os.path.join(landsat_temp,'%s.sharpened_band6.local' % sceneID)
-    tifFile = os.path.join(landsat_temp,'%s_lstSharp.tiff' % sceneID)
+    scene = sceneID[3:9]
+    folder = os.path.join(landsatCacheDir,"L%d" % sat,scene)
+    lst_path = os.path.join(folder,"LST")
+    if not os.path.exists(lst_path):
+        os.mkdir(lst_path)
+    tifFile = os.path.join(lst_path,'%s_lstSharp.tiff' % sceneID)
     globFN = os.path.join(landsat_temp,"%s.sharpened_band6.global" % sceneID)
     Gg = gdal.Open(globFN)
     globalData = Gg.ReadAsArray()
@@ -350,11 +356,11 @@ def getSharpenedLST(metaFN):
     dd = data.astype(np.int16)
     ls.clone(tifFile,dd)
     
-    # copy files to their proper places
-    scenePath = os.path.join(landsat_LST,sceneID[3:9])
-    if not os.path.exists(scenePath):
-        os.mkdir(scenePath)
-    shutil.copyfile(tifFile ,os.path.join(scenePath,tifFile.split(os.sep)[-1]))
+#    # copy files to their proper places
+#    scenePath = os.path.join(landsat_LST,sceneID[3:9])
+#    if not os.path.exists(scenePath):
+#        os.mkdir(scenePath)
+#    shutil.copyfile(tifFile ,os.path.join(scenePath,tifFile.split(os.sep)[-1]))
     
     # cleaning up    
     clean(landsat_temp,"%s.local_sharpened" % sceneID)

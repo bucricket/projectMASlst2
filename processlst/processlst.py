@@ -16,17 +16,73 @@ import pycurl
 import keyring
 import getpass
 import ftplib
+import pandas as pd
+import sqlite3
 from .processData import Landsat,RTTOV
 from .utils import folders,untar,getFile
 from .lndlst_dms import getSharpenedLST
+from getlandsatdata import getlandsatdata
 
 
 base = os.getcwd()
+cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA"))
 Folders = folders(base)   
-landsat_SR = Folders['landsat_SR']
-landsat_LST = Folders['landsat_LST']
+#landsat_LST = Folders['landsat_LST']
 landsat_temp = Folders['landsat_Temp']
 
+def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
+    
+    db_fn = os.path.join(cacheDir,"landsat_products.db")
+    
+    date = landsatDB.acquisitionDate
+    ullat = landsatDB.upperLeftCornerLatitude
+    ullon = landsatDB.upperLeftCornerLongitude
+    lllat = landsatDB.lowerRightCornerLatitude
+    lllon = landsatDB.lowerRightCornerLongitude
+    productIDs = landsatDB.LANDSAT_PRODUCT_ID
+    
+    if not os.path.exists(db_fn):
+        conn = sqlite3.connect( db_fn )
+        landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
+                      "upperLeftCornerLongitude":ullon,
+                      "lowerRightCornerLatitude":lllat,
+                      "lowerRightCornerLongitude":lllon,
+                      "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
+        landsat_df = pd.DataFrame.from_dict(landsat_dict)
+        landsat_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+        conn.close()
+    else:
+        conn = sqlite3.connect( db_fn )
+        res = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = res.fetchall()[0]
+        if (product in tables):
+            orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+        else:
+            orig_df = pd.DataFrame()
+            
+        landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
+                      "upperLeftCornerLongitude":ullon,
+                      "lowerRightCornerLatitude":lllat,
+                      "lowerRightCornerLongitude":lllon,
+                      "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
+        landsat_df = pd.DataFrame.from_dict(landsat_dict)
+        orig_df = orig_df.append(landsat_df,ignore_index=True)
+        orig_df = orig_df.drop_duplicates(keep='last')
+        orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+        conn.close()
+
+def searchLandsatProductsDB(lat,lon,start_date,end_date,product,cacheDir):
+    db_fn = os.path.join(cacheDir,"landsat_products.db")
+    conn = sqlite3.connect( db_fn )
+
+    out_df = pd.read_sql_query("SELECT * from %s WHERE (acquisitionDate >= '%s')"
+                   "AND (acquisitionDate < '%s') AND (upperLeftCornerLatitude > %f )"
+                   "AND (upperLeftCornerLongitude < %f ) AND "
+                   "(lowerRightCornerLatitude < %f) AND "
+                   "(lowerRightCornerLongitude > %f)" % 
+                   (product,start_date,end_date,lat,lon,lat,lon),conn)   
+    conn.close()
+    return out_df
 
 def runRTTOV(profileDict):
     nlevels = profileDict['P'].shape[1]
@@ -139,18 +195,37 @@ def runRTTOV(profileDict):
         
     return tirsRttov
 
-def get_lst(earth_user,earth_pass):
-    sceneIDlist = glob.glob(os.path.join(landsat_temp,'*_MTL.txt'))
-
+def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
+    landsatCacheDir = os.path.join(cacheDir,"LANDSAT")
+    db_fn = os.path.join(landsatCacheDir,"landsat_products.db")
+    available = 'Y'
+    search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
+    productIDs = search_df.LANDSAT_PRODUCT_ID
+    paths = search_df.local_file_path 
+    #====check what products are done against what Landsat data is available===
+    if os.path.exists(db_fn):
+        processedProductIDs = searchLandsatProductsDB(loc[0],loc[1],start_date,end_date,"LST",landsatCacheDir)
+        df1 = processedProductIDs[["LANDSAT_PRODUCT_ID"]]
+        merged = df1.merge(pd.DataFrame(productIDs), indicator=True, how='outer')
+        df3 = merged[merged['_merge'] != 'both' ]
+        productIDs = df3[["LANDSAT_PRODUCT_ID"]].LANDSAT_PRODUCT_ID
 
     # ------------------------------------------------------------------------
     # Set up the profile data
     # ------------------------------------------------------------------------
-    for i in xrange(len(sceneIDlist)):
-        inFN = sceneIDlist[i]
-        landsat = Landsat(inFN,username = earth_user,
+    if len(productIDs)>0:
+        output_df = pd.DataFrame()
+        for productID in productIDs:
+            output_df = output_df.append(getlandsatdata.searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
+        paths = output_df.local_file_path
+        productIDs = search_df.LANDSAT_PRODUCT_ID
+    count = 0   
+    for productID in productIDs:
+        productIDpath = os.path.join(paths[count],productID)
+        count=+1
+        landsat = Landsat(productIDpath,username = earth_user,
                           password = earth_pass)
-        rttov = RTTOV(inFN,username = earth_user,
+        rttov = RTTOV(productIDpath,username = earth_user,
                           password = earth_pass)
         tifFile = os.path.join(landsat_temp,'%s_lst.tiff'% landsat.sceneID)
         binFile = os.path.join(landsat_temp,"lndsr."+landsat.sceneID+".cband6.bin")
@@ -159,37 +234,44 @@ def get_lst(earth_user,earth_pass):
             tiirsRttov = runRTTOV(profileDict)
             landsat.processLandsatLST(tiirsRttov,profileDict)
 
-        subprocess.call(["gdal_translate","-of", "ENVI", "%s" % tifFile, "%s" % binFile])
-
-    #=====sharpen the corrected LST==========================================
-
-        getSharpenedLST(inFN)
+            subprocess.call(["gdal_translate","-of", "ENVI", "%s" % tifFile, "%s" % binFile])
     
-    #=====move files to their respective directories and remove temp
-
-        binFN = os.path.join(landsat_temp,'%s.sharpened_band6.bin' % landsat.sceneID)
-        tifFN = os.path.join(landsat_LST,'%s_lstSharp.tiff' % landsat.sceneID)
-        subprocess.call(["gdal_translate", "-of","GTiff","%s" % binFN,"%s" % tifFN]) 
+        #=====sharpen the corrected LST========================================
+    
+            getSharpenedLST(productIDpath,sat)
+        
+        #=====move files to their respective directories and remove temp
+#    
+#            binFN = os.path.join(landsat_temp,'%s.sharpened_band6.bin' % landsat.sceneID)
+#            tifFN = os.path.join(landsat_LST,'%s_lstSharp.tiff' % landsat.sceneID)
+#            subprocess.call(["gdal_translate", "-of","GTiff","%s" % binFN,"%s" % tifFN]) 
         
         
 def main():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("earth_user", type=str, help="earth Login Username")
-    parser.add_argument("earth_pass", type=str, help="earth Login Password")
+    parser.add_argument("start_date", type=str, help="Start date yyyy-mm-dd")
+    parser.add_argument("end_date", type=str, help="Start date yyyy-mm-dd")
+    parser.add_argument("cloud", type=int, help="cloud coverage")
+    parser.add_argument('-s','--sat', nargs='?',type=int, default=8, help='which landsat to search or download, i.e. Landsat 8 = 8')
     args = parser.parse_args()
-    earth_user = args.earth_user
-    earth_pass = args.earth_pass
-    # =====earthData credentials===============
-    if earth_user == None:
-        earth_user = str(getpass.getpass(prompt="earth login username:"))
-        if keyring.get_password("nasa",earth_user)==None:
-            earth_pass = str(getpass.getpass(prompt="earth login password:"))
-            keyring.set_password("nasa",earth_user,earth_pass)
-        else:
-            earth_pass = str(keyring.get_password("nasa",earth_user)) 
+      
+    loc = [args.lat,args.lon] 
+    start_date = args.start_date
+    end_date = args.end_date
+    cloud = args.cloud
+    sat = args.sat
 
-    get_lst(earth_user,earth_pass)
+    # =====earthData credentials===============
+
+    earth_user = str(getpass.getpass(prompt="earth login username:"))
+    if keyring.get_password("nasa",earth_user)==None:
+        earth_pass = str(getpass.getpass(prompt="earth login password:"))
+        keyring.set_password("nasa",earth_user,earth_pass)
+    else:
+        earth_pass = str(keyring.get_password("nasa",earth_user)) 
+
+    get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir)
     
 
 
