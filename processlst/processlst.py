@@ -22,6 +22,9 @@ from .processData import Landsat,RTTOV
 from .utils import folders,untar,getFile
 from .lndlst_dms import getSharpenedLST
 from getlandsatdata import getlandsatdata
+import logging
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.DEBUG)
 
 
 
