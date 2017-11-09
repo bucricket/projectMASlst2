@@ -66,7 +66,7 @@ setup(
     description="prepare LST data for input to pyDisALEXI",
     author="Mitchell Schull",
     author_email="mitch.schull@noaa.gov",
-    url="https://github.com/bucricket/projectMASlst.git",
+    url="https://github.com/bucricket/projectMASlst2.git",
 #    packages= ['processlst'],
     py_modules=['processlst.processlst','processlst.utils',
                 'processlst.lndlst_dms','processlst.landsatTools',
