@@ -24,11 +24,20 @@ from .lndlst_dms import getSharpenedLST
 from getlandsatdata import getlandsatdata
 
 
+
 base = os.getcwd()
 cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA"))
 Folders = folders(base)   
 #landsat_LST = Folders['landsat_LST']
 landsat_temp = Folders['landsat_Temp']
+
+def _pickle_method(m):
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+copy_reg.pickle(types.MethodType, _pickle_method)
 
 def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
     
