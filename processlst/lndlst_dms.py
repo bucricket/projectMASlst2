@@ -8,15 +8,10 @@ Created on Mon Feb 27 14:03:53 2017
 import os
 from osgeo import gdal
 import numpy as np
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import AdaBoostRegressor
-import pandas as pd
-from scipy.ndimage import zoom
 from .utils import folders,writeArray2Envi,clean
 from .landsatTools import landsat_metadata, GeoTIFF
 import subprocess
 from joblib import Parallel, delayed
-import shutil
 
 base = os.getcwd()
 cacheDir = os.path.abspath(os.path.join(base,os.pardir,"SATELLITE_DATA"))
@@ -180,104 +175,6 @@ def localPred(productIDpath,th_res,s_row,s_col):
     subprocess.call(["predict_fineT","%s" % dmsfn,"%d" % s_row, "%d" % s_col, 
     "%d" % e_row, "%d" % e_col])
     
-def globalPredSK(sceneID):
-    base = os.getcwd()
-    regr_1 = DecisionTreeRegressor(max_depth=15)
-    rng = np.random.RandomState(1)
-    regr_2 = AdaBoostRegressor(DecisionTreeRegressor(max_depth=15),
-                          n_estimators=5, random_state=rng)
-    fn = os.path.join(base,'th_samples.data')
-    df = pd.read_csv(fn)
-    X = np.array(df.iloc[:,3:-4])
-    w  = np.array(df.iloc[:,-1])
-    w = np.reshape(w,[w.shape[0],1])
-    X  = np.concatenate((X, w), axis=1)
-    y = np.array(df.iloc[:,-2])
-    regr_1.fit(X,y)
-    regr_2.fit(X,y)
-    blue = os.path.join(landsat_temp,"%s_sr_band2.tif" % sceneID)
-    green = os.path.join(landsat_temp,"%s_sr_band3.tif" % sceneID)
-    red = os.path.join(landsat_temp,"%s_sr_band4.tif" % sceneID)
-    nir = os.path.join(landsat_temp,"%s_sr_band5.tif" % sceneID)
-    swir1 = os.path.join(landsat_temp,"%s_sr_band6.tif" % sceneID)
-    swir2 = os.path.join(landsat_temp,"%s_sr_band7.tif" % sceneID)
-    # open files and assepble them into 2-d numpy array
-    
-    Gblue = gdal.Open(blue)
-    blueData = Gblue.ReadAsArray()
-    blueVec = np.reshape(blueData,[blueData.shape[0]*blueData.shape[1]])
-    Ggreen = gdal.Open(green)
-    greenData = Ggreen.ReadAsArray()
-    greenVec = np.reshape(greenData,[greenData.shape[0]*greenData.shape[1]])
-    Gnir = gdal.Open(nir)
-    nirData = Gnir.ReadAsArray()
-    nirVec = np.reshape(nirData,[nirData.shape[0]*nirData.shape[1]])
-    Gred = gdal.Open(red)
-    redData = Gred.ReadAsArray()
-    redVec = np.reshape(redData,[redData.shape[0]*redData.shape[1]])
-    Gswir1 = gdal.Open(swir1)
-    swir1Data = Gswir1.ReadAsArray()
-    swir1Vec = np.reshape(swir1Data,[swir1Data.shape[0]*swir1Data.shape[1]])
-    Gswir2 = gdal.Open(swir2)
-    swir2Data = Gswir2.ReadAsArray()
-    swir2Vec = np.reshape(swir2Data,[swir2Data.shape[0]*swir2Data.shape[1]])
-    
-    ylocs = (np.tile(range(0,blueData.shape[0]),(blueData.shape[1],1)).T)/3
-    xlocs = (np.tile(range(0,blueData.shape[1]),(blueData.shape[0],1)))/3
-    pixID = ylocs*10000+xlocs
-    pixIDvec = np.reshape(pixID,[swir2Data.shape[0]*swir2Data.shape[1]])
-    newDF = pd.DataFrame({'pixID':pixIDvec,'green':greenVec,'red':redVec,
-                          'nir':nirVec,'swir1':swir1Vec,'swir2':swir2Vec})
-    #newDF.replace(to_replace=-9999,value=np.)
-    dnMean = newDF.groupby('pixID').mean()
-    cv = newDF.groupby('pixID').std()/dnMean
-    meanCV = np.array(cv.mean(axis=1))
-    meanCV[np.isinf(meanCV)]=10.
-    meanCV[np.where(meanCV==0)]=10.
-    weight = 0.1/meanCV
-    weight[np.isinf(weight)]=20.
-    weight[np.where(meanCV<0.01)]=10.
-    weight[weight==20.]=0.
-    weight[np.where(weight<0.)]=0.
-
-    rows = np.array(dnMean.index/10000)
-    cols = np.array(dnMean.index-((dnMean.index/10000)*10000))
-    w_array = np.nan * np.empty((greenData.shape[0]/3,greenData.shape[1]/3))    
-    w_array[list(rows), list(cols)] = list(weight)
-    w_array2 = zoom(w_array,3.)
-    weight = np.reshape(w_array2,[greenData.shape[0]*greenData.shape[1]])
-    newDF['weight']=weight
-    xNew = np.stack((greenVec,redVec,nirVec,swir1Vec,swir2Vec,weight), axis=-1)
-    outData = regr_1.predict(xNew)
-    outData = regr_2.predict(xNew)
-    
-    return np.reshape(outData,[blueData.shape[0],blueData.shape[1]])
-
-def localPredSK(sceneID,th_res,s_row,s_col):
-
-    wsize1 = 200
-    overlap1 = 20
-    
-    wsize = int((wsize1*120)/th_res)
-    overlap = int((overlap1*120)/th_res)
-    
-    e_row = s_row+wsize
-    e_col = s_col+wsize
-    os_row = s_row - overlap
-    os_col = s_col - overlap
-    oe_row = e_row +overlap
-    oe_col = e_col + overlap
-    perpareDMSinp(sceneID,s_row,s_col,"local","bin")
-    #dmsfn = os.path.join(landsat_temp,"dms_%d_%d.inp" % (s_row,s_col))
-    dmsfn = "dms_%d_%d.inp" % (s_row,s_col)
-    # do cubist prediction
-    subprocess.call(["get_samples","%s" % dmsfn,"%d" % os_row,"%d" % os_col,
-    "%d" % oe_row,"%d" % oe_col])
-    localPred = globalPredSK(sceneID)
-    subprocess.call(["cubist","-f", "th_samples_%d_%d" % (s_row,s_col),"-u","-r","15"])
-    subprocess.call(["predict_fineT","%s" % dmsfn,"%d" % s_row, "%d" % s_col, 
-    "%d" % e_row, "%d" % e_col])
-    return localPred
     
 def getSharpenedLST(productIDpath,sat):
     landsatCacheDir = os.path.join(cacheDir,"LANDSAT")
@@ -307,16 +204,9 @@ def getSharpenedLST(productIDpath,sat):
     finalDMSinp(productIDpath,"global")  
     # do global prediction
     subprocess.call(["get_samples","%s" % dmsfn])
-    
-    model = 'cubist'
-    if model == 'cubist':
-        subprocess.call(["cubist","-f", "th_samples","-u","-r","30"])
-        subprocess.call(["predict_fineT","%s" % dmsfn])
-    else:
-        #===========EXPERIMENTAL===========
-        globFN = os.path.join(landsat_temp,"%s.sharpened_band6.global" % sceneID)
-        globalData = globalPredSK(sceneID)
-        writeArray2Envi(globalData,ulx,uly,xres,yres,ls.proj4,globFN)
+
+    subprocess.call(["cubist","-f", "th_samples","-u","-r","30"])
+    subprocess.call(["predict_fineT","%s" % dmsfn])
     # do local prediction
     print("========LOCAL PREDICTION===========")
     njobs = -1
