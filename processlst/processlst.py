@@ -212,28 +212,38 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     landsatCacheDir = os.path.join(cacheDir,"LANDSAT")
     db_fn = os.path.join(landsatCacheDir,"landsat_products.db")
     available = 'Y'
+    product = 'LST'
     search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
     paths = search_df.local_file_path 
     #====check what products are done against what Landsat data is available===
     if os.path.exists(db_fn):
-        processedProductIDs = searchLandsatProductsDB(loc[0],loc[1],start_date,end_date,"LST",landsatCacheDir)
-        df1 = processedProductIDs[["LANDSAT_PRODUCT_ID"]]
-        merged = df1.merge(pd.DataFrame(productIDs), indicator=True, how='outer')
-        df3 = merged[merged['_merge'] != 'both' ]
-        productIDs = df3[["LANDSAT_PRODUCT_ID"]].LANDSAT_PRODUCT_ID
+        conn = sqlite3.connect( db_fn )
+        res = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = res.fetchall()[0]
+        if (product in tables):
+            processedProductIDs = searchLandsatProductsDB(loc[0],loc[1],start_date,end_date,product,landsatCacheDir)
+            df1 = processedProductIDs[["LANDSAT_PRODUCT_ID"]]
+            merged = df1.merge(pd.DataFrame(productIDs), indicator=True, how='outer')
+            df3 = merged[merged['_merge'] != 'both' ]
+            productIDs = df3[["LANDSAT_PRODUCT_ID"]].LANDSAT_PRODUCT_ID
+            if len(productIDs)>0:
+                output_df = pd.DataFrame()
+                for productID in productIDs:
+                    output_df = output_df.append(getlandsatdata.searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
+                paths = output_df.local_file_path
+                productIDs = search_df.LANDSAT_PRODUCT_ID
+            
+                
 
     # ------------------------------------------------------------------------
     # Set up the profile data
     # ------------------------------------------------------------------------
-    if len(productIDs)>0:
+    count = 0   
+    for productID in productIDs:
         output_df = pd.DataFrame()
         for productID in productIDs:
             output_df = output_df.append(getlandsatdata.searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
-        paths = output_df.local_file_path
-        productIDs = search_df.LANDSAT_PRODUCT_ID
-    count = 0   
-    for productID in productIDs:
         productIDpath = os.path.join(paths[count],productID)
         count=+1
         landsat = Landsat(productIDpath,username = earth_user,
@@ -251,14 +261,14 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     
         #=====sharpen the corrected LST========================================
     
-            getSharpenedLST(productIDpath,sat)
+            lst_fn = getSharpenedLST(productIDpath,sat)
         
         #=====move files to their respective directories and remove temp
 #    
 #            binFN = os.path.join(landsat_temp,'%s.sharpened_band6.bin' % landsat.sceneID)
 #            tifFN = os.path.join(landsat_LST,'%s_lstSharp.tiff' % landsat.sceneID)
 #            subprocess.call(["gdal_translate", "-of","GTiff","%s" % binFN,"%s" % tifFN]) 
-        
+            updateLandsatProductsDB(output_df,lst_fn,landsatCacheDir,'LST')
         
 def main():
     

@@ -258,6 +258,7 @@ def getSharpenedLST(productIDpath,sat):
     clean(base,"th_samples")
     clean(base,"dms")
     print("DONE SHARPENING")
+    return tifFile
     
     
     
