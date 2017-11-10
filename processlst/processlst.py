@@ -238,14 +238,12 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
 
     # ------------------------------------------------------------------------
     # Set up the profile data
-    # ------------------------------------------------------------------------
-    count = 0   
-    for productID in productIDs:
-        output_df = pd.DataFrame()
-        for productID in productIDs:
-            output_df = output_df.append(getlandsatdata.searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
-        productIDpath = os.path.join(paths[count],productID)
-        count=+1
+    # ------------------------------------------------------------------------  
+    for i in range(len(productIDs)):
+#        output_df = pd.DataFrame()
+#        for productID in productIDs:
+#            output_df = output_df.append(getlandsatdata.searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
+        productIDpath = os.path.join(paths[i],productIDs[i])
         landsat = Landsat(productIDpath,username = earth_user,
                           password = earth_pass)
         rttov = RTTOV(productIDpath,username = earth_user,
