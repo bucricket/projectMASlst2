@@ -15,6 +15,8 @@ import argparse
 import pycurl
 import keyring
 import getpass
+import types
+import copy_reg
 import ftplib
 import pandas as pd
 import sqlite3
