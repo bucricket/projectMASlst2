@@ -7,7 +7,6 @@ Created on Sun Feb 12 11:51:03 2017
 """
 
 import os
-import glob
 import subprocess
 import sys
 import pyrttov
@@ -27,23 +26,7 @@ from getlandsatdata import getlandsatdata
 import logging
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.DEBUG)
-import keyring.backend
 
-class TestKeyring(keyring.backend.KeyringBackend):
-    """A test keyring which always outputs same password
-    """
-    priority = 1
-
-    def set_password(self, servicename, username, password):
-        pass
-
-    def get_password(self, servicename, username):
-        return "password from TestKeyring"
-
-    def delete_password(self, servicename, username, password):
-        pass
-    
-keyring.set_keyring(TestKeyring())
 
 
 base = os.getcwd()
