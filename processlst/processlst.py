@@ -216,7 +216,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
     paths = search_df.local_file_path 
-    #====check what products are done against what Landsat data is available===
+    #====check what products are processed against what Landsat data is available===
     if os.path.exists(db_fn):
         conn = sqlite3.connect( db_fn )
         res = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -238,7 +238,8 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
 
     # ------------------------------------------------------------------------
     # Set up the profile data
-    # ------------------------------------------------------------------------  
+    # ------------------------------------------------------------------------
+    print(productIDs)
     for i in range(len(productIDs)):
 #        output_df = pd.DataFrame()
 #        for productID in productIDs:
