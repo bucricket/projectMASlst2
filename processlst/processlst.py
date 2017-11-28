@@ -213,7 +213,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     db_fn = os.path.join(landsatCacheDir,"landsat_products.db")
     available = 'Y'
     product = 'LST'
-    search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
+    search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,cacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
     paths = search_df.local_file_path 
     #====check what products are processed against what Landsat data is available===
@@ -230,7 +230,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
             if len(productIDs)>0:
                 output_df = pd.DataFrame()
                 for productID in productIDs:
-                    output_df = output_df.append(getlandsatdata.searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
+                    output_df = output_df.append(getlandsatdata.searchProduct(productID,cacheDir,sat),ignore_index=True)
                 paths = output_df.local_file_path
                 productIDs = search_df.LANDSAT_PRODUCT_ID
             
