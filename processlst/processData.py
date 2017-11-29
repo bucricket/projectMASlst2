@@ -70,7 +70,8 @@ def getHTTPdata(url,outFN,auth=None):
     with open(outFN, 'wb') as f:
         f.write(result)
         
-def downloadCFSRpython(hr1file,year=None,doy=None):  
+def downloadCFSRpython(hr1file,user,passwd,year=None,doy=None): 
+    auth = (user,passwd)
     if year==None:
         dd = datetime.date.today()+datetime.timedelta(days=-1)
         year = dd.year
@@ -97,11 +98,11 @@ def downloadCFSRpython(hr1file,year=None,doy=None):
     outFN = os.path.join(dstpath,hr1file)
     if not os.path.exists(outFN):
         print "downloading file...%s" % hr1file
-        getHTTPdata(pydapURL,outFN)
+        getHTTPdata(pydapURL,outFN,auth)
 
-def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
+def updateModelDataDB(landsatDB,filenames,cacheDir,product):
     
-    db_fn = os.path.join(cacheDir,"landsat_products.db")
+    db_fn = os.path.join(cacheDir,"model_data.db")
     
     date = landsatDB.acquisitionDate
     ullat = landsatDB.upperLeftCornerLatitude
@@ -338,7 +339,7 @@ class RTTOV:
         
         return outDict
 
-def preparePROFILEdataCFSR(self):
+    def preparePROFILEdataCFSR(self):
 
         ul = [self.ulLon-1.5,self.ulLat+1.5]
         lr = [self.lrLon+1.5,self.lrLat-1.5]
@@ -350,12 +351,13 @@ def preparePROFILEdataCFSR(self):
         xSize = (maxX-minX)+1
         ySize = (maxY-minY)+1
         doy = (datetime.date(self.year,self.month,self.day)-datetime.date(self.year,1,1)).days+1
-        
+        CFSR_path = os.path.join(cacheDir,'CFSR')
+        dstpath =  os.path.join(CFSR_path,"%d" % self.year,"%03d" % doy)
         #=====get surface data==========
         overpass = getGrabTime(self.hr)
         cfsrHRs = getGrabTimeInv(overpass,doy)
         hr1file = 'cdas1.t%02dz.pgrbh%02d.grib2' % (cfsrHRs[0],cfsrHRs[1])
-        downloadCFSRpython(hr1file,self.year,doy)
+        downloadCFSRpython(hr1file,self.earthLoginUser,self.earthLoginPass,self.year,doy)
         outFN = os.path.join(dstpath,hr1file)
         dataset = gdal.Open(outFN, gdal.GA_ReadOnly)
                 
