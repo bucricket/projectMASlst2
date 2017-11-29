@@ -461,6 +461,9 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
         trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T
         
+        print "====Min Temp============"
+        print np.min(trshp)
+        
         #mid_level_pressure [Pa]
         plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T
         #qrshp =np.reshape(q,q.shape[0]*q.shape[1])
