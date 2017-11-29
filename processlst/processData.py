@@ -422,11 +422,11 @@ class RTTOV:
                 count+=1
                 bands.append(i)
         qv = np.zeros([count,ySize,xSize])
-        count=count-1
+        count=0
         for band in bands:
             d = dataset.GetRasterBand(band)
             qv[count,:,:] = d.ReadAsArray(minX,minY,xSize,ySize)
-            count-=1
+            count+=1
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
 
@@ -448,7 +448,7 @@ class RTTOV:
                 bands.append(i)
         t = np.zeros([count,ySize,xSize])
         pl = np.zeros([count,ySize,xSize])
-        count=-1
+        count=count-1
         for band in bands:
             d = dataset.GetRasterBand(band)
             var2 = d.GetMetadata_List()[6]
