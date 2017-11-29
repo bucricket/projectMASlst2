@@ -432,6 +432,8 @@ class RTTOV:
 
         qv = qv/(1e-6*(287.0/461.5))
         qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
+        print "====Min QV============"
+        print np.min(qvrshp)
         
         
         #layers air temperature [C]
