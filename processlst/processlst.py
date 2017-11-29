@@ -242,6 +242,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     # Set up the profile data
     # ------------------------------------------------------------------------
     print(productIDs)
+    fns = []
     for i in range(len(productIDs)):
 #        output_df = pd.DataFrame()
 #        for productID in productIDs:
@@ -254,7 +255,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
         tifFile = os.path.join(landsat_temp,'%s_lst.tiff'% landsat.sceneID)
         binFile = os.path.join(landsat_temp,"lndsr."+landsat.sceneID+".cband6.bin")
         if not os.path.exists(tifFile):
-            profileDict = rttov.preparePROFILEdata()
+            profileDict = rttov.preparePROFILEdataCFSR()
             tiirsRttov = runRTTOV(profileDict)
             landsat.processLandsatLST(tiirsRttov,profileDict)
 
@@ -262,14 +263,15 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     
         #=====sharpen the corrected LST========================================
     
-            lst_fn = getSharpenedLST(productIDpath,sat)
+            fns.append(getSharpenedLST(productIDpath,sat))
+            
         
         #=====move files to their respective directories and remove temp
 #    
 #            binFN = os.path.join(landsat_temp,'%s.sharpened_band6.bin' % landsat.sceneID)
 #            tifFN = os.path.join(landsat_LST,'%s_lstSharp.tiff' % landsat.sceneID)
 #            subprocess.call(["gdal_translate", "-of","GTiff","%s" % binFN,"%s" % tifFN]) 
-            updateLandsatProductsDB(output_df,lst_fn,landsatCacheDir,'LST')
+    updateLandsatProductsDB(search_df,fns,landsatCacheDir,'LST')
         
 def main():
     
