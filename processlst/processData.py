@@ -348,8 +348,8 @@ class RTTOV:
         minX = int((ul[0]-(-180))/0.5)
         minY = int((lr[1]-(-90))/0.5)
         maxY = int((ul[1]-(-90))/0.5)
-        xSize = (maxX-minX)+1
-        ySize = (maxY-minY)+1
+        xSize = (maxX-minX)
+        ySize = (maxY-minY)
         doy = (datetime.date(self.year,self.month,self.day)-datetime.date(self.year,1,1)).days+1
         CFSR_path = os.path.join(cacheDir,'CFSR')
         dstpath =  os.path.join(CFSR_path,"%d" % self.year,"%03d" % doy)
