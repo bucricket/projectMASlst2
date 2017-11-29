@@ -361,10 +361,11 @@ class RTTOV:
         outFN = os.path.join(dstpath,hr1file)
         dataset = gdal.Open(outFN, gdal.GA_ReadOnly)
                 
-        for i in range(380,600):
+        for i in range(1,600):
             band = dataset.GetRasterBand(i)
             var = band.GetMetadata_List()[1]
             var2 = band.GetMetadata_List()[6]
+#            print var,var2
             if (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=0-SFC'):
                 TMPSFC = dataset.GetRasterBand(i)
             elif (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=2-HTGL'):
@@ -375,7 +376,7 @@ class RTTOV:
                 UGRD = dataset.GetRasterBand(i)
             elif (var == 'GRIB_ELEMENT=SPFH') and (var2 == 'GRIB_SHORT_NAME=2-HTGL'):
                 SPFH = dataset.GetRasterBand(i)
-            elif (var == 'GRIB_ELEMENT=PRES') and (var2 == 'GRIB_SHORT_NAME=0-HCTL'):
+            elif (var == 'GRIB_ELEMENT=PRES') and (var2 == 'GRIB_SHORT_NAME=0-MSL'):
                 PRES = dataset.GetRasterBand(i)
             else:
                 a =''
