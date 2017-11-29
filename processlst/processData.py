@@ -430,8 +430,8 @@ class RTTOV:
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
 
-        qv = qv/(1e-6*(287.0/461.5))
-        qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
+        qv2 = qv/(1e-6*(287.0/461.5))
+        qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T
         print "====Min QV============"
         print np.min(qvrshp)
         
@@ -701,6 +701,7 @@ class Landsat:
         aster = None
         # calcualte LST
         emis[emis<0.000001] = np.nan
+        print trans
         surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
         #get Kappa constants from Landsat
 
