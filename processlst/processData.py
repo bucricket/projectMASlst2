@@ -475,10 +475,10 @@ class RTTOV:
         lats = range(900,-905,-5)
         lats = np.array(lats)/10.
         lat = np.tile(lats,(len(lons),1)).T
-        latIn = np.squeeze(lat[minY:maxY,minX:maxX])
+        latIn = lat[minY:maxY,minX:maxX]
         latrshp =np.reshape(latIn,latIn.shape[0]*latIn.shape[1])
         lon = np.tile(lons,(len(lats),1))
-        lonIn = np.squeeze(lon[minY:maxY,minX:maxX])
+        lonIn = nlon[minY:maxY,minX:maxX]
         lonrshp =np.reshape(lonIn,lonIn.shape[0]*lonIn.shape[1])
         el = np.repeat(0.0,v10.shape[0]*v10.shape[1]) #NEED DEM
         #check surface pressure
