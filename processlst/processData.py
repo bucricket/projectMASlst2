@@ -494,7 +494,7 @@ class RTTOV:
         gas_units = 2  # ppmv over moist air
         
         # datetimes[6][nprofiles]: yy, mm, dd, hh, mm, ss
-        datetimes = np.tile([self.year, self.month, self.day, hr, 0, 0],(v10.shape[0]*v10.shape[1],1))
+        datetimes = np.tile([self.year, self.month, self.day, cfsrHRs[0], 0, 0],(v10.shape[0]*v10.shape[1],1))
         
         # angles[4][nprofiles]: satzen, satazi, sunzen, sunazi
         #get from landsat MTL
