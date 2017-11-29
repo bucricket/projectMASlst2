@@ -367,22 +367,16 @@ class RTTOV:
             var2 = band.GetMetadata_List()[6]
             if (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=0-SFC'):
                 TMPSFC = dataset.GetRasterBand(i)
-                print("band: %s: %s" % (var,var2))
             elif (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=2-HTGL'):
                 TMP2 = dataset.GetRasterBand(i)
-                print("band: %s: %s" % (var,var2))
             elif (var == 'GRIB_ELEMENT=VGRD') and (var2 == 'GRIB_SHORT_NAME=10-HTGL'):
                 VGRD = dataset.GetRasterBand(i)
-                print("band: %s: %s" % (var,var2))
             elif (var == 'GRIB_ELEMENT=UGRD') and (var2 == 'GRIB_SHORT_NAME=10-HTGL'):
                 UGRD = dataset.GetRasterBand(i)
-                print("band: %s: %s" % (var,var2))
             elif (var == 'GRIB_ELEMENT=SPFH') and (var2 == 'GRIB_SHORT_NAME=2-HTGL'):
                 SPFH = dataset.GetRasterBand(i)
-                print("band: %s: %s" % (var,var2))
             elif (var == 'GRIB_ELEMENT=PRES') and (var2 == 'GRIB_SHORT_NAME=0-HCTL'):
                 PRES = dataset.GetRasterBand(i)
-                print("band: %s: %s" % (var,var2))
             else:
                 a =''
         #surface presure [Pa]
@@ -426,7 +420,6 @@ class RTTOV:
             if (var == 'GRIB_ELEMENT=SPFH') and (var2.split('-')[-1]=='ISBL'):
                 count+=1
                 bands.append(i)
-                print("ID:%d, band %d: %s: %s" % (count,i,var,var2))
         qv = np.zeros([count,ySize,xSize])
         count=0
         for band in bands:
@@ -450,7 +443,6 @@ class RTTOV:
             if (var == 'GRIB_ELEMENT=TMP') and (var2.split('-')[-1]=='ISBL'):
                 count+=1
                 bands.append(i)
-                print("ID:%d, band %d: %s: %s" % (count,i,var,var2))
         t = np.zeros([count,ySize,xSize])
         pl = np.zeros([count,ySize,xSize])
         count=0
@@ -480,7 +472,10 @@ class RTTOV:
         lon = np.tile(lons,(len(lats),1))
         lonIn = lon[minY:maxY,minX:maxX]
         lonrshp =np.reshape(lonIn,lonIn.shape[0]*lonIn.shape[1])
+        print latrshp.shape
+        print lonrshp.shape
         el = np.repeat(0.0,v10.shape[0]*v10.shape[1]) #NEED DEM
+        print el.shape
         #check surface pressure
         
         
