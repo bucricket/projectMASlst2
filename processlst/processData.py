@@ -445,7 +445,7 @@ class RTTOV:
                 bands.append(i)
         t = np.zeros([count,ySize,xSize])
         pl = np.zeros([count,ySize,xSize])
-        count=count
+        count=count-1
         for band in bands:
             d = dataset.GetRasterBand(band)
             var2 = d.GetMetadata_List()[6]
