@@ -255,7 +255,8 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
         tifFile = os.path.join(landsat_temp,'%s_lst.tiff'% landsat.sceneID)
         binFile = os.path.join(landsat_temp,"lndsr."+landsat.sceneID+".cband6.bin")
         if not os.path.exists(tifFile):
-            profileDict = rttov.preparePROFILEdataCFSR()
+#            profileDict = rttov.preparePROFILEdataCFSR()
+            profileDict = rttov.preparePROFILEdata()
             tiirsRttov = runRTTOV(profileDict)
             landsat.processLandsatLST(tiirsRttov,profileDict)
 
