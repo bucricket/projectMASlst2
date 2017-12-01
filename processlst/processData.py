@@ -389,7 +389,6 @@ class RTTOV:
             else:
                 a =''
         #surface presure [Pa]
-        skt = np.append(skt[:,180:],skt[:,:180],axis=1)
         surfacePressure = PRES.ReadAsArray(minX,minY,xSize,ySize)
         sp = (surfacePressure/100) # Pa to kPa
         sprshp =np.reshape(sp,sp.shape[0]*sp.shape[1])
