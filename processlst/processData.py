@@ -486,10 +486,8 @@ class RTTOV:
         lon = np.tile(lons,(len(lats),1))
         lonIn = lon[minY:maxY,minX:maxX]
         lonrshp =np.reshape(lonIn,lonIn.shape[0]*lonIn.shape[1])
-        print latrshp.shape
-        print lonrshp.shape
         el = np.repeat(0.0,v10.shape[0]*v10.shape[1]) #NEED DEM
-        print el.shape
+        print lats
         #check surface pressure
         
         
