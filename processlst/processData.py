@@ -173,7 +173,7 @@ class RTTOV:
         self.day = d.day
         self.hr = d.hour #UTC
 
-    def preparePROFILEdata(self):
+    def preparePROFILEdataMERRA(self):
 
         ul = [self.ulLon-1.5,self.ulLat+1.5]
         lr = [self.lrLon+1.5,self.lrLat-1.5]
