@@ -34,13 +34,16 @@ def perpareDMSinp(productIDpath,s_row,s_col,locglob,ext):
     cloud = os.path.join(landsat_temp,"%s_cfmask.cloud.dat" % productID)
     
     #convert tifs to bin
-    files2convert = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"]
+    files2convert = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","Mask"]
     out_dats = ["blue","green","red","nir","swir1","swir2","cloud"]
     count = 0
     for fn in files2convert:
         tif_fn = os.path.join(landsat_temp,"%s_%s.tif" % (productID,fn))
         dat_fn = os.path.join(landsat_temp,"%s_%s.%s.dat" % (productID,fn,out_dats[count]))
         count+=1
+        if fn == 'Mask':
+            tif_fn = os.path.join(landsat_temp,"%s_%s.tiff" % (sceneID,fn))
+            dat_fn = os.path.join(landsat_temp,"%s_cfmask.%s.dat" % (productID,fn,out_dats[count]))
         outds = gdal.Open(tif_fn)
         outds = gdal.Translate(dat_fn, outds,options=gdal.TranslateOptions(format="ENVI"))
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
