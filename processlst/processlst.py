@@ -264,7 +264,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     
         #=====sharpen the corrected LST========================================
     
-#            fns.append(getSharpenedLST(productIDpath,sat))
+            fns.append(getSharpenedLST(productIDpath,sat))
             
         
         #=====move files to their respective directories and remove temp
