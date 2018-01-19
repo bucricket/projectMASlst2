@@ -23,31 +23,32 @@ landsat_temp = Folders['landsat_Temp']
 
 def perpareDMSinp(productIDpath,s_row,s_col,locglob,ext):
     meta = landsat_metadata(os.path.join('%s_MTL.txt' % productIDpath))
+    productID = meta.LANDSAT_PRODUCT_ID
     sceneID = meta.LANDSAT_SCENE_ID
-    blue = os.path.join(landsat_temp,"%s_sr_band2.blue.dat" % sceneID)
-    green = os.path.join(landsat_temp,"%s_sr_band3.green.dat" % sceneID)
-    red = os.path.join(landsat_temp,"%s_sr_band4.red.dat" % sceneID)
-    nir = os.path.join(landsat_temp,"%s_sr_band5.nir.dat" % sceneID)
-    swir1 = os.path.join(landsat_temp,"%s_sr_band6.swir1.dat" % sceneID)
-    swir2 = os.path.join(landsat_temp,"%s_sr_band7.swir2.dat" % sceneID)
-    cloud = os.path.join(landsat_temp,"%s_cfmask.cloud.dat" % sceneID)
+    blue = os.path.join(landsat_temp,"%s_sr_band2.blue.dat" % productID)
+    green = os.path.join(landsat_temp,"%s_sr_band3.green.dat" % productID)
+    red = os.path.join(landsat_temp,"%s_sr_band4.red.dat" % productID)
+    nir = os.path.join(landsat_temp,"%s_sr_band5.nir.dat" % productID)
+    swir1 = os.path.join(landsat_temp,"%s_sr_band6.swir1.dat" % productID)
+    swir2 = os.path.join(landsat_temp,"%s_sr_band7.swir2.dat" % productID)
+    cloud = os.path.join(landsat_temp,"%s_cfmask.cloud.dat" % productID)
     
     #convert tifs to bin
     files2convert = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","cfmask"]
     out_dats = ["blue","green","red","nir","swir1","swir2","cloud"]
     count = 0
     for fn in files2convert:
-        tif_fn = os.path.join(landsat_temp,"%s_%s.tif" % (sceneID,fn))
-        dat_fn = os.path.join(landsat_temp,"%s_%s.%s.dat" % (sceneID,fn,out_dats[count]))
+        tif_fn = os.path.join(landsat_temp,"%s_%s.tif" % (productID,fn))
+        dat_fn = os.path.join(landsat_temp,"%s_%s.%s.dat" % (productID,fn,out_dats[count]))
         count+=1
         outds = gdal.Open(tif_fn)
         outds = gdal.Translate(dat_fn, outds,options=gdal.TranslateOptions(format="ENVI"))
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
     ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT-(sw_res*0.5)
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT+(sw_res*0.5)
-    if sceneID[2]=="5":
+    if productID[3]=="5":
         native_Thres = 120
-    elif sceneID[2]=="7":
+    elif productID[3]=="7":
         native_Thres = 60
     else:
         native_Thres = 90
@@ -99,24 +100,25 @@ def perpareDMSinp(productIDpath,s_row,s_col,locglob,ext):
 
 def finalDMSinp(productIDpath,ext):
     meta = landsat_metadata(os.path.join('%s_MTL.txt' % productIDpath))
+    productID = meta.LANDSAT_PRODUCT_ID
     sceneID = meta.LANDSAT_SCENE_ID
-    blue = os.path.join(landsat_temp,"%s_sr_band2.blue.dat" % sceneID)
-    green = os.path.join(landsat_temp,"%s_sr_band3.green.dat" % sceneID)
-    red = os.path.join(landsat_temp,"%s_sr_band4.red.dat" % sceneID)
-    nir = os.path.join(landsat_temp,"%s_sr_band5.nir.dat" % sceneID)
-    swir1 = os.path.join(landsat_temp,"%s_sr_band6.swir1.dat" % sceneID)
-    swir2 = os.path.join(landsat_temp,"%s_sr_band7.swir2.dat" % sceneID)
-    cloud = os.path.join(landsat_temp,"%s_cfmask.cloud.dat" % sceneID)
-    #meta = landsat_metadata(os.path.join(landsat_temp,'%s_MTL.txt' % sceneID))
+    blue = os.path.join(landsat_temp,"%s_sr_band2.blue.dat" % productID)
+    green = os.path.join(landsat_temp,"%s_sr_band3.green.dat" % productID)
+    red = os.path.join(landsat_temp,"%s_sr_band4.red.dat" % productID)
+    nir = os.path.join(landsat_temp,"%s_sr_band5.nir.dat" % productID)
+    swir1 = os.path.join(landsat_temp,"%s_sr_band6.swir1.dat" % productID)
+    swir2 = os.path.join(landsat_temp,"%s_sr_band7.swir2.dat" % productID)
+    cloud = os.path.join(landsat_temp,"%s_cfmask.cloud.dat" % productID)
+    #meta = landsat_metadata(os.path.join(landsat_temp,'%s_MTL.txt' % productID))
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
     ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT-(sw_res*0.5)
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT+(sw_res*0.5)
     nrows = meta.REFLECTIVE_LINES
     ncols = meta.REFLECTIVE_SAMPLES
     zone = meta.UTM_ZONE
-    if sceneID[2]=="5":
+    if productID[3]=="5":
         native_Thres = 120
-    elif sceneID[2]=="7":
+    elif productID[3]=="7":
         native_Thres = 60
     else:
         native_Thres = 90
