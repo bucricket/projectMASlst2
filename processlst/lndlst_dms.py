@@ -48,6 +48,7 @@ def perpareDMSinp(productIDpath,s_row,s_col,locglob,ext):
         count+=1
         outds = gdal.Open(tif_fn)
         outds = gdal.Translate(dat_fn, outds,options=gdal.TranslateOptions(format="ENVI"))
+        outds = None
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
     ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT-(sw_res*0.5)
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT+(sw_res*0.5)
