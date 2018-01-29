@@ -354,8 +354,8 @@ class RTTOV:
 #           minX = int(abs((ul[0]/0.5))+360)
 #        else:
 #           minX = int(abs((ul[0]/0.5))+360)
-        minY = int((90-(lr[1]))/0.5)
-        maxY = int((90-(ul[1]))/0.5)
+        maxY = int((90-(lr[1]))/0.5)
+        minY = int((90-(ul[1]))/0.5)
         print minY,maxY,minX,maxX
 #        minY = int((90)-(ul[1])/0.5)
 #        maxY = int((90)-(lr[1])/0.5)
