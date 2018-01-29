@@ -344,18 +344,20 @@ class RTTOV:
         ul = [self.ulLon-1.5,self.ulLat+1.5]
         lr = [self.lrLon+1.5,self.lrLat-1.5]
         # The data is lat/lon and upside down so [0,0] = [-90.0,-180.0]
-#        maxX = int((360+(lr[0]))/0.5)
-#        minX = int((360+(ul[0]))/0.5)
-        if lr[0]>0:
-           maxX = int(abs((lr[0]/0.5)))
-        else:
-           maxX = int(abs((lr[0]/0.5))+360)
-        if lr[0]>0:
-           minX = int(abs((ul[0]/0.5)))
-        else:
-           minX = int(abs((ul[0]/0.5))+360)
-        minY = int((90)-(ul[1])/0.5)
-        maxY = int((90)-(lr[1])/0.5)
+        maxX = int((360+(lr[0]/0.5)))
+        minX = int((360+(ul[0]/0.5)))
+#        if lr[0]>0:
+#           maxX = int(abs((lr[0]/0.5))+360)
+#        else:
+#           maxX = int(abs((lr[0]/0.5))+360)
+#        if lr[0]>0:
+#           minX = int(abs((ul[0]/0.5))+360)
+#        else:
+#           minX = int(abs((ul[0]/0.5))+360)
+        minY = int((90-(lr[1]))/0.5)
+        maxY = int((90-(ul[1]))/0.5)
+#        minY = int((90)-(ul[1])/0.5)
+#        maxY = int((90)-(lr[1])/0.5)
         xSize = (maxX-minX)
         ySize = (maxY-minY)
         doy = (datetime.date(self.year,self.month,self.day)-datetime.date(self.year,1,1)).days+1
