@@ -256,8 +256,8 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
         binFile = os.path.join(landsat_temp,"lndsr."+landsat.sceneID+".cband6.bin")
         if not os.path.exists(tifFile):
             profileDict = rttov.preparePROFILEdataCFSR()
-#            profileDict = rttov.preparePROFILEdataMERRA()
-            tiirsRttov = runRTTOV(profileDict)
+##            profileDict = rttov.preparePROFILEdataMERRA()
+#            tiirsRttov = runRTTOV(profileDict)
 #            landsat.processLandsatLST(tiirsRttov,profileDict)
 #
 #            subprocess.call(["gdal_translate","-of", "ENVI", "%s" % tifFile, "%s" % binFile])
