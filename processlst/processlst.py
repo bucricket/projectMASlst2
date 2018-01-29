@@ -258,9 +258,9 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
             profileDict = rttov.preparePROFILEdataCFSR()
 #            profileDict = rttov.preparePROFILEdataMERRA()
             tiirsRttov = runRTTOV(profileDict)
-            landsat.processLandsatLST(tiirsRttov,profileDict)
-
-            subprocess.call(["gdal_translate","-of", "ENVI", "%s" % tifFile, "%s" % binFile])
+#            landsat.processLandsatLST(tiirsRttov,profileDict)
+#
+#            subprocess.call(["gdal_translate","-of", "ENVI", "%s" % tifFile, "%s" % binFile])
     
         #=====sharpen the corrected LST========================================
     
