@@ -46,9 +46,10 @@ def perpareDMSinp(productIDpath,s_row,s_col,locglob,ext):
             tif_fn = os.path.join(maskPath,"%s_%s.tiff" % (sceneID,fn))
             dat_fn = os.path.join(landsat_temp,"%s_cfmask.%s.dat" % (productID,out_dats[count]))
         count+=1
-        outds = gdal.Open(tif_fn)
-        outds = gdal.Translate(dat_fn, outds,options=gdal.TranslateOptions(format="ENVI"))
-        outds = None
+        if not os.path.exists(tif_fn):
+            outds = gdal.Open(tif_fn)
+            outds = gdal.Translate(dat_fn, outds,options=gdal.TranslateOptions(format="ENVI"))
+            outds = None
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
     ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT-(sw_res*0.5)
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT+(sw_res*0.5)
@@ -105,6 +106,7 @@ def perpareDMSinp(productIDpath,s_row,s_col,locglob,ext):
     file.close()
 
 def finalDMSinp(productIDpath,ext):
+    maskPath = os.path.join((os.sep).join(productIDpath.split(os.sep)[:-2]),"CF_MASK")
     meta = landsat_metadata(os.path.join('%s_MTL.txt' % productIDpath))
     productID = meta.LANDSAT_PRODUCT_ID
     sceneID = meta.LANDSAT_SCENE_ID
@@ -116,6 +118,22 @@ def finalDMSinp(productIDpath,ext):
     swir2 = os.path.join(landsat_temp,"%s_sr_band7.swir2.dat" % productID)
     cloud = os.path.join(landsat_temp,"%s_cfmask.cloud.dat" % productID)
     #meta = landsat_metadata(os.path.join(landsat_temp,'%s_MTL.txt' % productID))
+    #convert tifs to bin
+    files2convert = ["sr_band2","sr_band3","sr_band4","sr_band5","sr_band6","sr_band7","Mask"]
+    out_dats = ["blue","green","red","nir","swir1","swir2","cloud"]
+    count = 0
+    for fn in files2convert:
+        tif_fn = productIDpath+"_%s.tif" % (fn)
+        dat_fn = os.path.join(landsat_temp,"%s_%s.%s.dat" % (productID,fn,out_dats[count]))
+        
+        if fn == 'Mask':
+            tif_fn = os.path.join(maskPath,"%s_%s.tiff" % (sceneID,fn))
+            dat_fn = os.path.join(landsat_temp,"%s_cfmask.%s.dat" % (productID,out_dats[count]))            
+        count+=1
+        if not os.path.exists(tif_fn):
+            outds = gdal.Open(tif_fn)
+            outds = gdal.Translate(dat_fn, outds,options=gdal.TranslateOptions(format="ENVI"))
+            outds = None
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
     ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT-(sw_res*0.5)
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT+(sw_res*0.5)
@@ -254,7 +272,7 @@ def getSharpenedLST(productIDpath,sat):
       
     #subprocess.call(["gdal_merge.py", "-o", "%s" % finalFile , "%s" % os.path.join(landsat_temp,'%s.local*' % sceneID)])
     # combine the the local and global images
-    finalDMSinp(productID,"bin")
+    finalDMSinp(productIDpath,"bin")
     subprocess.call(["combine_models","dms.inp"])
     # convert from ENVI to geoTIFF
     fn = os.path.join(landsat_temp,"%s.sharpened_band6.bin" % sceneID)
