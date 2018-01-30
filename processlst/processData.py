@@ -441,7 +441,7 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
 
         qv2 = qv/(1e-6*(287.0/461.5))
-        qvrshp =np.flipud(np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T)
+        qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T
         print "====Min QV============"
         print np.min(qvrshp)
         print "====Max QV============"
@@ -471,7 +471,7 @@ class RTTOV:
         #tIn=open_dods(fullUrl+'?T[0:1:7][0,:1:71][0:1:360][0:1:575]')
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
-        trshp =np.flipud(np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T)
+        trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T
         
         print "====Min Temp============"
         print np.min(trshp)
@@ -479,7 +479,7 @@ class RTTOV:
         print np.max(trshp)
         
         #mid_level_pressure [Pa]
-        plrshp =np.flipud(np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T)
+        plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T
         #qrshp =np.reshape(q,q.shape[0]*q.shape[1])
         
         lons = range(-1800,1800,5)
