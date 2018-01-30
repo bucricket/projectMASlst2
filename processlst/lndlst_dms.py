@@ -203,9 +203,8 @@ def localPred(productIDpath,th_res,s_row,s_col):
     oe_row = e_row +overlap
     oe_col = e_col + overlap
     perpareDMSinp(productIDpath,s_row,s_col,"local","bin")
-    #dmsfn = os.path.join(landsat_temp,"dms_%d_%d.inp" % (s_row,s_col))
     dmsfn = "dms_%d_%d.inp" % (s_row,s_col)
-    # do cubist prediction
+    #============build cubist model============================================
     subprocess.call(["get_samples","%s" % dmsfn,"%d" % os_row,"%d" % os_col,
     "%d" % oe_row,"%d" % oe_col])
     subprocess.call(["cubist","-f", "th_samples_%d_%d" % (s_row,s_col),"-u","-r","15"])
@@ -222,79 +221,83 @@ def getSharpenedLST(productIDpath,sat):
     ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT-(sw_res*0.5)
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT+(sw_res*0.5)
     xres = meta.GRID_CELL_SIZE_REFLECTIVE
-    yres = meta.GRID_CELL_SIZE_REFLECTIVE   
-    ls = GeoTIFF(os.path.join('%s_sr_band1.tif' % productIDpath))
-    th_res = meta.GRID_CELL_SIZE_THERMAL
-    if sceneID[2]=="5":
-        th_res = 120
-    elif sceneID[2]=="7":
-        th_res = 60
-    else:
-        th_res = 90
-    scale = int(th_res/meta.GRID_CELL_SIZE_REFLECTIVE)
-    nrows = int(meta.REFLECTIVE_LINES/scale)
-    ncols = int(meta.REFLECTIVE_SAMPLES/scale)
-    #dmsfn = os.path.join(landsat_temp,"dms_0_0.inp")
-    dmsfn = "dms.inp"
-    # create dms.inp
-    print("========GLOBAL PREDICTION===========")
-    finalDMSinp(productIDpath,"global")  
-    # do global prediction
-    subprocess.call(["get_samples","%s" % dmsfn])
-
-    subprocess.call(["cubist","-f", "th_samples","-u","-r","30"])
-    subprocess.call(["predict_fineT","%s" % dmsfn])
-    # do local prediction
-    print("========LOCAL PREDICTION===========")
-    njobs = -1
-    wsize1 = 200
-    wsize = int((wsize1*120)/th_res)
-    # process local parts in parallel
-    Parallel(n_jobs=njobs, verbose=5)(delayed(localPred)(productIDpath,th_res,s_row,s_col) for s_col in range(0,int(ncols/wsize)*wsize,wsize) for s_row in range(0,int(nrows/wsize)*wsize,wsize))
-    # put the parts back together
-    finalFile = os.path.join(landsat_temp,'%s.sharpened_band6.local' % sceneID)
+    yres = meta.GRID_CELL_SIZE_REFLECTIVE  
     scene = sceneID[3:9]
     folder = os.path.join(landsatCacheDir,"L%d" % sat,scene)
     lst_path = os.path.join(folder,"LST")
     if not os.path.exists(lst_path):
         os.mkdir(lst_path)
     tifFile = os.path.join(lst_path,'%s_lstSharp.tiff' % sceneID)
-    globFN = os.path.join(landsat_temp,"%s.sharpened_band6.global" % sceneID)
-    Gg = gdal.Open(globFN)
-    globalData = Gg.ReadAsArray()
-    for s_col in range(0,int(ncols/wsize)*wsize,wsize): 
-        for s_row in range(0,int(nrows/wsize)*wsize,wsize):
-            fn = os.path.join(landsat_temp,"%s.local_sharpened_%d_%d.bin" %(sceneID,s_row,s_col))
-            if os.path.exists(fn):
-                Lg = gdal.Open(fn)
-                globalData[0,s_row*scale:s_row*scale+wsize*scale+1,s_col*scale:s_col*scale+wsize*scale+1] = Lg.ReadAsArray(s_col*scale,s_row*scale,wsize*scale+1,wsize*scale+1)[0]
-    writeArray2Envi(globalData,ulx,uly,xres,yres,ls.proj4,finalFile)
-      
-    #subprocess.call(["gdal_merge.py", "-o", "%s" % finalFile , "%s" % os.path.join(landsat_temp,'%s.local*' % sceneID)])
-    # combine the the local and global images
-    finalDMSinp(productIDpath,"bin")
-    subprocess.call(["combine_models","dms.inp"])
-    # convert from ENVI to geoTIFF
-    fn = os.path.join(landsat_temp,"%s.sharpened_band6.bin" % sceneID)
-    g = gdal.Open(fn)
-    #=====convert to celcius and scale data======
-    data = g.ReadAsArray()[1]
-    data = (data-273.15)*100.
-    dd = data.astype(np.int16)
-    ls.clone(tifFile,dd)
+    if not os.path.exists(tifFile):
+        ls = GeoTIFF(os.path.join('%s_sr_band1.tif' % productIDpath))
+        th_res = meta.GRID_CELL_SIZE_THERMAL
+        if sceneID[2]=="5":
+            th_res = 120
+        elif sceneID[2]=="7":
+            th_res = 60
+        else:
+            th_res = 90
+        scale = int(th_res/meta.GRID_CELL_SIZE_REFLECTIVE)
+        nrows = int(meta.REFLECTIVE_LINES/scale)
+        ncols = int(meta.REFLECTIVE_SAMPLES/scale)
+        #dmsfn = os.path.join(landsat_temp,"dms_0_0.inp")
+        dmsfn = "dms.inp"
+        # create dms.inp
+        print("========GLOBAL PREDICTION===========")
+        finalDMSinp(productIDpath,"global")  
+        # do global prediction
+        subprocess.call(["get_samples","%s" % dmsfn])
     
-#    # copy files to their proper places
-#    scenePath = os.path.join(landsat_LST,sceneID[3:9])
-#    if not os.path.exists(scenePath):
-#        os.mkdir(scenePath)
-#    shutil.copyfile(tifFile ,os.path.join(scenePath,tifFile.split(os.sep)[-1]))
+        subprocess.call(["cubist","-f", "th_samples","-u","-r","30"])
+        subprocess.call(["predict_fineT","%s" % dmsfn])
+        # do local prediction
+        print("========LOCAL PREDICTION===========")
+        njobs = -1
+        wsize1 = 200
+        wsize = int((wsize1*120)/th_res)
+        #===========process local parts in parallel================================
+        Parallel(n_jobs=njobs, verbose=5)(delayed(localPred)(productIDpath,th_res,s_row,s_col) for s_col in range(0,int(ncols/wsize)*wsize,wsize) for s_row in range(0,int(nrows/wsize)*wsize,wsize))
+        #===========put the parts back together====================================
+        finalFile = os.path.join(landsat_temp,'%s.sharpened_band6.local' % sceneID)
     
-    # cleaning up    
-    clean(landsat_temp,"%s.local_sharpened" % sceneID)
-    clean(landsat_temp,"%s.sharpened" % sceneID)
-    clean(base,"th_samples")
-    clean(base,"dms")
-    print("DONE SHARPENING")
+        globFN = os.path.join(landsat_temp,"%s.sharpened_band6.global" % sceneID)
+        Gg = gdal.Open(globFN)
+        globalData = Gg.ReadAsArray()
+        for s_col in range(0,int(ncols/wsize)*wsize,wsize): 
+            for s_row in range(0,int(nrows/wsize)*wsize,wsize):
+                fn = os.path.join(landsat_temp,"%s.local_sharpened_%d_%d.bin" %(sceneID,s_row,s_col))
+                if os.path.exists(fn):
+                    Lg = gdal.Open(fn)
+                    globalData[0,s_row*scale:s_row*scale+wsize*scale+1,s_col*scale:s_col*scale+wsize*scale+1] = Lg.ReadAsArray(s_col*scale,s_row*scale,wsize*scale+1,wsize*scale+1)[0]
+        writeArray2Envi(globalData,ulx,uly,xres,yres,ls.proj4,finalFile)
+          
+        #subprocess.call(["gdal_merge.py", "-o", "%s" % finalFile , "%s" % os.path.join(landsat_temp,'%s.local*' % sceneID)])
+        # combine the the local and global images
+        finalDMSinp(productIDpath,"bin")
+        subprocess.call(["combine_models","dms.inp"])
+        #========convert from ENVI to geoTIFF======================================
+        fn = os.path.join(landsat_temp,"%s.sharpened_band6.bin" % sceneID)
+        g = gdal.Open(fn)
+        #========convert to celcius and scale data=================================
+        data = g.ReadAsArray()[1]
+        data = (data-273.15)*100.
+        dd = data.astype(np.int16)
+        ls.clone(tifFile,dd)
+        
+    #    # copy files to their proper places
+    #    scenePath = os.path.join(landsat_LST,sceneID[3:9])
+    #    if not os.path.exists(scenePath):
+    #        os.mkdir(scenePath)
+    #    shutil.copyfile(tifFile ,os.path.join(scenePath,tifFile.split(os.sep)[-1]))
+        
+        # cleaning up    
+        clean(landsat_temp,"%s.local_sharpened" % sceneID)
+        clean(landsat_temp,"%s.sharpened" % sceneID)
+        clean(base,"th_samples")
+        clean(base,"dms")
+        print("DONE SHARPENING")
+    else:
+        print("ALREADY DONE SHARPENING!")
     return tifFile
     
     
