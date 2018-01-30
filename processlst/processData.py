@@ -356,7 +356,6 @@ class RTTOV:
 #           minX = int(abs((ul[0]/0.5))+360)
         maxY = int((90-(lr[1]))/0.5)
         minY = int((90-(ul[1]))/0.5)
-        print minY,maxY,minX,maxX
 #        minY = int((90)-(ul[1])/0.5)
 #        maxY = int((90)-(lr[1])/0.5)
         xSize = (maxX-minX)
@@ -445,6 +444,8 @@ class RTTOV:
         qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T
         print "====Min QV============"
         print np.min(qvrshp)
+        print "====Max QV============"
+        print np.max(qvrshp)
         
         
         #layers air temperature [C]
@@ -474,6 +475,8 @@ class RTTOV:
         
         print "====Min Temp============"
         print np.min(trshp)
+        print "====Max Temp============"
+        print np.max(trshp)
         
         #mid_level_pressure [Pa]
         plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T
@@ -490,8 +493,8 @@ class RTTOV:
         lonIn = lon[minY:maxY,minX:maxX]
         lonrshp =np.reshape(lonIn,lonIn.shape[0]*lonIn.shape[1])
         el = np.repeat(0.0,v10.shape[0]*v10.shape[1]) #NEED DEM
-        print latIn
-        print lonIn
+#        print latIn
+#        print lonIn
         #check surface pressure
         
         
@@ -714,6 +717,7 @@ class Landsat:
         aster = None
         # calcualte LST
         emis[emis<0.000001] = np.nan
+        print "=====trans=========="
         print trans
         surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
         #get Kappa constants from Landsat
