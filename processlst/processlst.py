@@ -44,7 +44,7 @@ def _pickle_method(m):
 copy_reg.pickle(types.MethodType, _pickle_method)
 
 def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
-    if len(filenames) == 0:
+    if not len(filenames) == 0:
         db_fn = os.path.join(cacheDir,"landsat_products.db")
         
         date = landsatDB.acquisitionDate
