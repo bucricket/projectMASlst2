@@ -46,7 +46,7 @@ def perpareDMSinp(productIDpath,s_row,s_col,locglob,ext):
             tif_fn = os.path.join(maskPath,"%s_%s.tiff" % (sceneID,fn))
             dat_fn = os.path.join(landsat_temp,"%s_cfmask.%s.dat" % (productID,out_dats[count]))
         count+=1
-        if not os.path.exists(tif_fn):
+        if not os.path.exists(dat_fn):
             outds = gdal.Open(tif_fn)
             outds = gdal.Translate(dat_fn, outds,options=gdal.TranslateOptions(format="ENVI"))
             outds = None
@@ -130,7 +130,7 @@ def finalDMSinp(productIDpath,ext):
             tif_fn = os.path.join(maskPath,"%s_%s.tiff" % (sceneID,fn))
             dat_fn = os.path.join(landsat_temp,"%s_cfmask.%s.dat" % (productID,out_dats[count]))            
         count+=1
-        if not os.path.exists(tif_fn):
+        if not os.path.exists(dat_fn):
             outds = gdal.Open(tif_fn)
             outds = gdal.Translate(dat_fn, outds,options=gdal.TranslateOptions(format="ENVI"))
             outds = None
