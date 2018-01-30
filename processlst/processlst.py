@@ -257,8 +257,12 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
         if not os.path.exists(tifFile):
             profileDict = rttov.preparePROFILEdataCFSR()
 ##            profileDict = rttov.preparePROFILEdataMERRA()
-            tiirsRttov = runRTTOV(profileDict)
-            landsat.processLandsatLST(tiirsRttov,profileDict)
+            try:
+                tiirsRttov = runRTTOV(profileDict)
+                landsat.processLandsatLST(tiirsRttov,profileDict)
+            except:
+                print("Didn't do LST for some reason")
+                continue
 
             subprocess.call(["gdal_translate","-of", "ENVI", "%s" % tifFile, "%s" % binFile])
     
