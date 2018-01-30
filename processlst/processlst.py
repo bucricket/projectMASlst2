@@ -44,45 +44,45 @@ def _pickle_method(m):
 copy_reg.pickle(types.MethodType, _pickle_method)
 
 def updateLandsatProductsDB(landsatDB,filenames,cacheDir,product):
-    
-    db_fn = os.path.join(cacheDir,"landsat_products.db")
-    
-    date = landsatDB.acquisitionDate
-    ullat = landsatDB.upperLeftCornerLatitude
-    ullon = landsatDB.upperLeftCornerLongitude
-    lllat = landsatDB.lowerRightCornerLatitude
-    lllon = landsatDB.lowerRightCornerLongitude
-    productIDs = landsatDB.LANDSAT_PRODUCT_ID
-    
-    if not os.path.exists(db_fn):
-        conn = sqlite3.connect( db_fn )
-        landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
-                      "upperLeftCornerLongitude":ullon,
-                      "lowerRightCornerLatitude":lllat,
-                      "lowerRightCornerLongitude":lllon,
-                      "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
-        landsat_df = pd.DataFrame.from_dict(landsat_dict)
-        landsat_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
-        conn.close()
-    else:
-        conn = sqlite3.connect( db_fn )
-        res = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = res.fetchall()[0]
-        if (product in tables):
-            orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+    if len(filenames) == 0:
+        db_fn = os.path.join(cacheDir,"landsat_products.db")
+        
+        date = landsatDB.acquisitionDate
+        ullat = landsatDB.upperLeftCornerLatitude
+        ullon = landsatDB.upperLeftCornerLongitude
+        lllat = landsatDB.lowerRightCornerLatitude
+        lllon = landsatDB.lowerRightCornerLongitude
+        productIDs = landsatDB.LANDSAT_PRODUCT_ID
+        
+        if not os.path.exists(db_fn):
+            conn = sqlite3.connect( db_fn )
+            landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
+                          "upperLeftCornerLongitude":ullon,
+                          "lowerRightCornerLatitude":lllat,
+                          "lowerRightCornerLongitude":lllon,
+                          "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
+            landsat_df = pd.DataFrame.from_dict(landsat_dict)
+            landsat_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+            conn.close()
         else:
-            orig_df = pd.DataFrame()
-            
-        landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
-                      "upperLeftCornerLongitude":ullon,
-                      "lowerRightCornerLatitude":lllat,
-                      "lowerRightCornerLongitude":lllon,
-                      "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
-        landsat_df = pd.DataFrame.from_dict(landsat_dict)
-        orig_df = orig_df.append(landsat_df,ignore_index=True)
-        orig_df = orig_df.drop_duplicates(keep='last')
-        orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
-        conn.close()
+            conn = sqlite3.connect( db_fn )
+            res = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = res.fetchall()[0]
+            if (product in tables):
+                orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+            else:
+                orig_df = pd.DataFrame()
+                
+            landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
+                          "upperLeftCornerLongitude":ullon,
+                          "lowerRightCornerLatitude":lllat,
+                          "lowerRightCornerLongitude":lllon,
+                          "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
+            landsat_df = pd.DataFrame.from_dict(landsat_dict)
+            orig_df = orig_df.append(landsat_df,ignore_index=True)
+            orig_df = orig_df.drop_duplicates(keep='last')
+            orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+            conn.close()
 
 def searchLandsatProductsDB(lat,lon,start_date,end_date,product,cacheDir):
     db_fn = os.path.join(cacheDir,"landsat_products.db")
