@@ -479,7 +479,7 @@ class RTTOV:
         print np.max(trshp)
         
         #mid_level_pressure [Pa]
-        plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T
+        plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]])
         #qrshp =np.reshape(q,q.shape[0]*q.shape[1])
         
         lons = range(-1800,1800,5)
