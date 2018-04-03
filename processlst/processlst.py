@@ -216,9 +216,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
 
     search_df = getlandsatdata.search(loc[0],loc[1],start_date,end_date,cloud,available,landsatCacheDir,sat)
     productIDs = search_df.LANDSAT_PRODUCT_ID
-    print(productIDs)
     paths = search_df.local_file_path 
-    print(paths)
     #====check what products are processed against what Landsat data is available===
     if os.path.exists(db_fn):
         conn = sqlite3.connect( db_fn )
@@ -249,6 +247,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
 #        for productID in productIDs:
 #            output_df = output_df.append(getlandsatdata.searchProduct(productID,landsatCacheDir,sat),ignore_index=True)
         productIDpath = os.path.join(paths[i],productIDs[i])
+        print(productIDpath)
         landsat = Landsat(productIDpath,username = earth_user,
                           password = earth_pass)
         rttov = RTTOV(productIDpath,username = earth_user,
