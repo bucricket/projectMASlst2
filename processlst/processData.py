@@ -19,6 +19,7 @@ from pydap import client
 import urllib2,base64
 import sqlite3
 import pandas as pd
+import glob
 
 
 ncdcURL = 'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_analysis_pgbh/'
