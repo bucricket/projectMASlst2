@@ -17,6 +17,7 @@ import getpass
 import types
 import copy_reg
 import ftplib
+import wget
 import pandas as pd
 import sqlite3
 from .processData import Landsat,RTTOV
@@ -144,14 +145,18 @@ def runRTTOV(profileDict):
     rttovBRDFPath = os.path.join(rttovCoeffPath,'brdf_data')
     if not os.path.exists(rttovBRDFPath):
         print("downloading atlases.....")
-        ftp = ftplib.FTP("ftp.star.nesdis.noaa.gov")
-        ftp.login("anonymous", "")
-         
-        ftp.cwd('/pub/smcd/emb/mschull/')         # change directory to /pub/
-        getFile(ftp,'rttov_atlas.tar')
-         
-        ftp.quit()
-        untar('rttov_atlas.tar',rttovPath)
+        source = 'https://www.nwpsaf.eu/site/download/rttov_downloads/brdf_data/cms_brdf_atlas_hdf5.tar?e6316e&e6316e'
+        wget.download(url=source)
+        
+#        ftp = ftplib.FTP("ftp.star.nesdis.noaa.gov")
+#        ftp.login("anonymous", "")
+#         
+#        ftp.cwd('/pub/smcd/emb/mschull/')         # change directory to /pub/
+#        getFile(ftp,'rttov_atlas.tar')
+#         
+#        ftp.quit()
+#        untar('rttov_atlas.tar',rttovPath)
+        untar('cms_brdf_atlas_hdf5.tar',rttovPath)
 
         subprocess.check_output("chmod 755 %s%s*.H5" % (rttovEmisPath,os.sep), shell=True)   
         subprocess.check_output("chmod 755 %s%s*.H5" % (rttovBRDFPath,os.sep), shell=True)  
