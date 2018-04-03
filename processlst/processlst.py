@@ -282,7 +282,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
 #            binFN = os.path.join(landsat_temp,'%s.sharpened_band6.bin' % landsat.sceneID)
 #            tifFN = os.path.join(landsat_LST,'%s_lstSharp.tiff' % landsat.sceneID)
 #            subprocess.call(["gdal_translate", "-of","GTiff","%s" % binFN,"%s" % tifFN]) 
-    updateLandsatProductsDB(search_df,fns,landsatCacheDir,'LST')
+#    updateLandsatProductsDB(search_df,fns,landsatCacheDir,'LST')
         
 def main():
     
