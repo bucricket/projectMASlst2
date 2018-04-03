@@ -218,6 +218,7 @@ def get_lst(loc,start_date,end_date,earth_user,earth_pass,cloud,sat,cacheDir):
     productIDs = search_df.LANDSAT_PRODUCT_ID
     print(productIDs)
     paths = search_df.local_file_path 
+    print(paths)
     #====check what products are processed against what Landsat data is available===
     if os.path.exists(db_fn):
         conn = sqlite3.connect( db_fn )

@@ -615,6 +615,14 @@ class Landsat:
                 writeArray2Tiff(EmisBand4,lats[:,0],lons[0,:],tempName)
        
         #mosaic ,reproject and save as geotiff
+        tifs = glob.glob(os.path.join(self.ASTERmosaicTemp,'*.tiff'))
+        finalFileVRT = '%s/mosaic.vrt' % self.ASTERmosaicTemp
+        finalFile = os.path.join(self.landsatEmissivityBase,'%s_EMIS.tiff' % self.sceneID)
+        outds = gdal.BuildVRT(finalFileVRT, tifs, options=gdal.BuildVRTOptions(srcNodata=0.))
+        
+        outds = gdal.Translate(finalFile, outds)
+        outds = None
+            
         mosaicTempFN = '%s/mosaic.vrt' % self.ASTERmosaicTemp
         mosaicVRTcommand = 'gdalbuildvrt -srcnodata 0 %s %s/*.tiff' % (mosaicTempFN,self.ASTERmosaicTemp)
         out = subprocess.check_output(mosaicVRTcommand, shell=True)
