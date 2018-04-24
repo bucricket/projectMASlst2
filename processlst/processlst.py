@@ -275,7 +275,6 @@ def runRTTOV(profileDict):
     except pyrttov.RttovError as e:
         sys.stderr.write("Error loading instrument(s): {!s}".format(e))
         sys.exit(1)
-    tirsRttov.EmisAtlasPath = rttovEmisPath 
     # Associate the profiles with each Rttov instance
     tirsRttov.Profiles = myProfiles
     # ------------------------------------------------------------------------
