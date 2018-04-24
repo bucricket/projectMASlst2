@@ -260,8 +260,6 @@ def runRTTOV(profileDict):
     rttovCoeffPath = os.path.join(rttovPath,'rttov')
     rttovEmisPath = os.path.join(rttovCoeffPath,'emis_data') 
     tirsRttov.FileCoef = '{}/{}'.format(rttovCoeffPath,"rtcoef_landsat_8_tirs.dat")
-    tirsRttov.EmisAtlasPath = rttovEmisPath 
-#    tirsRttov.BrdfAtlasPath = rttovBRDFPath 
 
 
     tirsRttov.Options.AddInterp = True
@@ -277,7 +275,7 @@ def runRTTOV(profileDict):
     except pyrttov.RttovError as e:
         sys.stderr.write("Error loading instrument(s): {!s}".format(e))
         sys.exit(1)
-
+    tirsRttov.EmisAtlasPath = rttovEmisPath 
     # Associate the profiles with each Rttov instance
     tirsRttov.Profiles = myProfiles
     # ------------------------------------------------------------------------
