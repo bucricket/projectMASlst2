@@ -20,6 +20,7 @@ import ftplib
 import wget
 import pandas as pd
 import sqlite3
+import numpy as np
 from .processData import Landsat,RTTOV
 from .utils import folders,untar,getFile
 from .lndlst_dms import getSharpenedLST
@@ -98,7 +99,7 @@ def searchLandsatProductsDB(lat,lon,start_date,end_date,product,cacheDir):
     conn.close()
     return out_df
 
-def runRTTOV(profileDict):
+def runRTTOV_v1(profileDict):
     nlevels = profileDict['P'].shape[1]
     nprofiles = profileDict['P'].shape[0]
     myProfiles = pyrttov.Profiles(nprofiles, nlevels)
@@ -205,6 +206,122 @@ def runRTTOV(profileDict):
     # Call the RTTOV direct model for each instrument:
     # no arguments are supplied to runDirect so all loaded channels are
     # simulated
+    try:
+        tirsRttov.runDirect()
+    except pyrttov.RttovError as e:
+        sys.stderr.write("Error running RTTOV direct model: {!s}".format(e))
+        sys.exit(1)
+        
+    return tirsRttov
+
+def runRTTOV(profileDict):
+    nchan_tirs = 2 
+    nlevels = profileDict['P'].shape[1]
+    nprofiles = profileDict['P'].shape[0]
+    myProfiles = pyrttov.Profiles(nprofiles, nlevels)
+    myProfiles.GasUnits = 2
+    myProfiles.P = profileDict['P']
+    myProfiles.T = profileDict['T']
+    myProfiles.Q = profileDict['Q']
+    myProfiles.Angles = profileDict['Angles']
+    myProfiles.S2m = profileDict['S2m']
+    myProfiles.Skin = profileDict['Skin']
+    myProfiles.SurfType = profileDict['SurfType']
+    myProfiles.SurfGeom =profileDict['SurfGeom']
+    myProfiles.DateTimes = profileDict['Datetimes']
+    month = profileDict['Datetimes'][0,1]
+
+    # ------------------------------------------------------------------------
+    # Set up Rttov instance
+    # ------------------------------------------------------------------------
+
+    # Create Rttov object for the TIRS instrument
+
+    tirsRttov = pyrttov.Rttov()
+#    nchan_tirs = 1
+
+    # Set the options for each Rttov instance:
+    # - the path to the coefficient file must always be specified
+    # - specify paths to the emissivity and BRDF atlas data in order to use
+    #   the atlases (the BRDF atlas is only used for VIS/NIR channels so here
+    #   it is unnecessary for HIRS or MHS)
+    # - turn RTTOV interpolation on (because input pressure levels differ from
+    #   coefficient file levels)
+    # - set the verbose_wrapper flag to true so the wrapper provides more
+    #   information
+    # - enable solar simulations for SEVIRI
+    # - enable CO2 simulations for HIRS (the CO2 profiles are ignored for
+    #   the SEVIRI and MHS simulations)
+    # - enable the store_trans wrapper option for MHS to provide access to
+    #   RTTOV transmission structure
+    s = pyrttov.__file__
+    envPath = os.sep.join(s.split(os.sep)[:-6])
+    rttovPath = os.path.join(envPath,'share')
+    rttovCoeffPath = os.path.join(rttovPath,'rttov')
+    rttovEmisPath = os.path.join(rttovCoeffPath,'emis_data') 
+    tirsRttov.FileCoef = '{}/{}'.format(rttovCoeffPath,"rtcoef_landsat_8_tirs.dat")
+    tirsRttov.EmisAtlasPath = rttovEmisPath 
+#    tirsRttov.BrdfAtlasPath = rttovBRDFPath 
+
+
+    tirsRttov.Options.AddInterp = True
+    tirsRttov.Options.StoreTrans = True
+    tirsRttov.Options.StoreRad2 = True
+    tirsRttov.Options.VerboseWrapper = True
+
+
+    # Load the instruments:
+
+    try:
+        tirsRttov.loadInst()
+    except pyrttov.RttovError as e:
+        sys.stderr.write("Error loading instrument(s): {!s}".format(e))
+        sys.exit(1)
+
+    # Associate the profiles with each Rttov instance
+    tirsRttov.Profiles = myProfiles
+    # ------------------------------------------------------------------------
+    # Load the emissivity and BRDF atlases
+    # ------------------------------------------------------------------------
+
+    # Load the emissivity and BRDF atlases:
+    # - load data for August (month=8)
+    # - note that we only need to load the IR emissivity once and it is
+    #   available for both SEVIRI and HIRS: we could use either the seviriRttov
+    #   or hirsRttov object to do this
+    # - for the BRDF atlas, since SEVIRI is the only VIS/NIR instrument we can
+    #   use the single-instrument initialisation
+
+    tirsRttov.irEmisAtlasSetup(month)
+    irAtlas = pyrttov.Atlas()
+    irAtlas.AtlasPath = rttovEmisPath 
+    irAtlas.loadIrEmisAtlas(month, ang_corr=True)
+    # ------------------------------------------------------------------------
+    # Call RTTOV
+    # ------------------------------------------------------------------------
+
+    # Since we want the emissivity/reflectance to be calculated, the
+    # SurfEmisRefl attribute of the Rttov objects are left uninitialised:
+    # That way they will be automatically initialise to -1 by the wrapper
+
+    # Call the RTTOV direct model for each instrument:
+    # no arguments are supplied to runDirect so all loaded channels are
+    # simulated
+    surfemisrefl_tirs = np.zeros((2,nprofiles,nchan_tirs), dtype=np.float64)
+    tirsRttov.SurfEmisRefl = surfemisrefl_tirs
+    surfemisrefl_tirs[:,:,:]    = -1.
+
+    # Call emissivity and BRDF atlases
+    try:
+        # Do not supply a channel list for SEVIRI: this returns emissivity/BRDF values for all
+        # *loaded* channels which is what is required
+        surfemisrefl_tirs[0,:,:] = irAtlas.getEmisBrdf(tirsRttov)
+
+    except pyrttov.RttovError as e:
+        # If there was an error the emissivities/BRDFs will not have been modified so it
+        # is OK to continue and call RTTOV with calcemis/calcrefl set to TRUE everywhere
+        sys.stderr.write("Error calling atlas: {!s}".format(e))
+        
     try:
         tirsRttov.runDirect()
     except pyrttov.RttovError as e:
