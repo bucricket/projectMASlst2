@@ -289,7 +289,7 @@ def runRTTOV(profileDict):
     # - for the BRDF atlas, since SEVIRI is the only VIS/NIR instrument we can
     #   use the single-instrument initialisation
 
-    tirsRttov.irEmisAtlasSetup(month)
+#    tirsRttov.irEmisAtlasSetup(month)
     irAtlas = pyrttov.Atlas()
     irAtlas.AtlasPath = rttovEmisPath 
     irAtlas.loadIrEmisAtlas(month, ang_corr=True)
