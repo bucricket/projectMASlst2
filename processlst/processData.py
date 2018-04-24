@@ -731,7 +731,8 @@ class Landsat:
         surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
         #get Kappa constants from Landsat
 
-        LST = np.array(self.Kappa2*(1/np.log(self.Kappa1/surfRad)), dtype='float32')
+#        LST = np.array(self.Kappa2*(1/np.log(self.Kappa1/surfRad)), dtype='float32')
+        LST = np.array(self.Kappa2*(1/np.log((self.Kappa1/surfRad)+1.)), dtype='float32')
 
         
         lstName = os.path.join(self.landsatTemp,'%s_lst.tiff'% self.sceneID)
