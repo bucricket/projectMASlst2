@@ -443,6 +443,7 @@ class RTTOV:
         print "====orig max QV============"
         print np.max(qv)
         qv2 = qv/(1e-6*(287.0/461.5))
+        qv2 = qv2[::-1,:,:]
         qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T
         print "====Min QV============"
         print np.min(qvrshp)
@@ -467,10 +468,12 @@ class RTTOV:
             d = dataset.GetRasterBand(band)
             var2 = d.GetMetadata_List()[6]
             level = int((var2.split('-')[0]).split('=')[-1])
-            print(level)
             t[count,:,:] = d.ReadAsArray(minX,minY,xSize,ySize)+273.15 #convert to K
             pl[count,:,:] = np.tile(level,[ySize,xSize])/100. # convert from pa to hpa
             count+=1
+        t = t[::-1,:,:] # flip upside down so surface is on bottom
+        pl = pl[::-1,:,:]
+        print(t[:,0,0])
         #tIn=open_dods(fullUrl+'?T[0:1:7][0,:1:71][0:1:360][0:1:575]')
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
