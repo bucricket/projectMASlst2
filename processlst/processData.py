@@ -440,7 +440,8 @@ class RTTOV:
             count+=1
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
-
+        print "====orig max QV============"
+        print np.max(qv)
         qv2 = qv/(1e-6*(287.0/461.5))
         qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T
         print "====Min QV============"
