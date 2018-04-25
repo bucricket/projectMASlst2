@@ -404,8 +404,8 @@ class RTTOV:
         q = SPFH.ReadAsArray(minX,minY,xSize,ySize)
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
-        q2 = q/(1e-6*(287.0/461.5))
-        q2rshp =np.reshape(q2,q2.shape[0]*q2.shape[1])
+#        q2 = q/(1e-6*(287.0/461.5))
+        q2rshp =np.reshape(q,q.shape[0]*q.shape[1])
         
         # skin temp [C]
         skt = TMPSFC.ReadAsArray(minX,minY,xSize,ySize)+273.16 #convert to K
@@ -442,8 +442,8 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
         print "====orig max QV============"
         print np.max(qv)
-        qv2 = qv/(1e-6*(287.0/461.5))
-        qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T
+#        qv2 = qv/(1e-6*(287.0/461.5))
+        qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
         print(qvrshp[0,:])
 #        qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]])
         print "====Min QV============"
@@ -513,7 +513,9 @@ class RTTOV:
         satazi = np.repeat(0.0,v10.shape[0]*v10.shape[1])
         
         # Units for gas profiles
-        gas_units = 2  # ppmv over moist air
+        # 1= Kg/Kg over moist air
+        # 2 = ppmv over moist air
+        gas_units = 1  
         
         # datetimes[6][nprofiles]: yy, mm, dd, hh, mm, ss
         datetimes = np.tile([self.year, self.month, self.day, cfsrHRs[0], 0, 0],(v10.shape[0]*v10.shape[1],1))

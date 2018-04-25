@@ -219,7 +219,7 @@ def runRTTOV(profileDict):
     nlevels = profileDict['P'].shape[1]
     nprofiles = profileDict['P'].shape[0]
     myProfiles = pyrttov.Profiles(nprofiles, nlevels)
-    myProfiles.GasUnits = 2
+    myProfiles.GasUnits = 1
     myProfiles.P = profileDict['P']
     myProfiles.T = profileDict['T']
     myProfiles.Q = profileDict['Q']
