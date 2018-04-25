@@ -444,6 +444,7 @@ class RTTOV:
         print np.max(qv)
         qv2 = qv/(1e-6*(287.0/461.5))
         qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T
+        print(qvshp[:,0])
 #        qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]])
         print "====Min QV============"
         print np.min(qvrshp)
