@@ -444,7 +444,7 @@ class RTTOV:
         print np.max(qv)
         qv2 = qv/(1e-6*(287.0/461.5))
         qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]]).T
-        print(qvrshp[:,0])
+        print(qvrshp[0,:])
 #        qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]])
         print "====Min QV============"
         print np.min(qvrshp)
@@ -479,12 +479,12 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
         trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T
 #        trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]])
-        print(trshp[:,0])
-        
-        print "====Min Temp============"
-        print np.min(trshp)
-        print "====Max Temp============"
-        print np.max(trshp)
+#        print(trshp[:,0])
+#        
+#        print "====Min Temp============"
+#        print np.min(trshp)
+#        print "====Max Temp============"
+#        print np.max(trshp)
         
         #mid_level_pressure [Pa]
         plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T
