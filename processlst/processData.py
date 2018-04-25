@@ -728,7 +728,8 @@ class Landsat:
         emis[emis<0.000001] = np.nan
         print "=====trans=========="
         print trans
-        surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
+#        surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
+        surfRad =(ThermalRad-RadUp-trans*(1-emis)*RadDown)/trans*emis
         #get Kappa constants from Landsat
 
 #        LST = np.array(self.Kappa2*(1/np.log(self.Kappa1/surfRad)), dtype='float32')
