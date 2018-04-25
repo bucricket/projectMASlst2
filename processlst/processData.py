@@ -468,6 +468,7 @@ class RTTOV:
             d = dataset.GetRasterBand(band)
             var2 = d.GetMetadata_List()[6]
             level = int((var2.split('-')[0]).split('=')[-1])
+            print(level)
             t[count,:,:] = d.ReadAsArray(minX,minY,xSize,ySize)+273.15 #convert to K
             pl[count,:,:] = np.tile(level,[ySize,xSize])/100. # convert from pa to hpa
             count+=1
