@@ -672,6 +672,7 @@ class Landsat:
         
         #Process downwelling radiance
         RadDown = np.flipud(np.resize(tirsRttov.Rad2Down[:,channel,nlevels-2],origShap))
+        print(tirsRttov.Rad2Down[0,channel,:])
         tempName = os.path.join(self.landsatDataBase,'RadDown.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
         writeArray2Tiff(RadDown,lats[:,0],lons[0,:],tempName)
