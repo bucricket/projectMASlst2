@@ -509,7 +509,7 @@ class RTTOV:
         sunzen = np.repeat(self.solZen,v10.shape[0]*v10.shape[1])
         sunazi = np.repeat(self.solAzi,v10.shape[0]*v10.shape[1])
         fetch = np.repeat(100000,v10.shape[0]*v10.shape[1])
-        satzen = np.repeat(0.0,v10.shape[0]*v10.shape[1])
+        satzen = np.repeat(45.0,v10.shape[0]*v10.shape[1])
         satazi = np.repeat(0.0,v10.shape[0]*v10.shape[1])
         
         # Units for gas profiles
