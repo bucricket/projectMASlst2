@@ -674,7 +674,8 @@ class Landsat:
         out = subprocess.check_output(command, shell=True)
         Lg = gdal.Open(resampName2)
         RadDown = Lg.ReadAsArray()
-        RadDown = (RadDown*(nu4**2/10**7))#*.001
+#        RadDown = (RadDown*(nu4**2/10**7))#*.001
+        RadDown = RadDown*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
         Lg = None
         
         #Process upwelling radiance
@@ -690,7 +691,8 @@ class Landsat:
         out = subprocess.check_output(command, shell=True)
         Lg = gdal.Open(resampName2)
         RadUp = Lg.ReadAsArray()
-        RadUp = (RadUp*(nu4**2/10**7))#*.001
+#        RadUp = (RadUp*(nu4**2/10**7))#*.001
+        RadUp = RadUp*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
         Lg = None
         
         #Process transmission
