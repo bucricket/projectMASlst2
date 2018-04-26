@@ -395,29 +395,37 @@ class RTTOV:
         surfacePressure = PRES.ReadAsArray(minX,minY,xSize,ySize)
         sp = (surfacePressure/100) # Pa to hPa
         sprshp =np.reshape(sp,sp.shape[0]*sp.shape[1])
-        
+        print("===sfc press====")
+        print(sprshp[50])
         #2m air Temp (C)
         t2 = TMP2.ReadAsArray(minX,minY,xSize,ySize)+273.16 #convert to K
         t2rshp =np.reshape(t2,t2.shape[0]*t2.shape[1])
-        
+        print("===2m temp====")
+        print(t2rshp[50])
         #2m specific humidity [kg kg -1] -> 2 m water vapor [ppmv]
         q = SPFH.ReadAsArray(minX,minY,xSize,ySize)
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
 #        q2 = q/(1e-6*(287.0/461.5))
         q2rshp =np.reshape(q,q.shape[0]*q.shape[1])
-        
+        print("===2m q====")
+        print(q2rshp[50])
         # skin temp [C]
         skt = TMPSFC.ReadAsArray(minX,minY,xSize,ySize)+273.16 #convert to K
         sktrshp =np.reshape(skt,skt.shape[0]*skt.shape[1])
-        
+        print("===skin temp====")
+        print(sktrshp[50])
         # U10M 10-meter_eastward_wind [m s-1]
         u10 = UGRD.ReadAsArray(minX,minY,xSize,ySize)
         u10rshp =np.reshape(u10,u10.shape[0]*u10.shape[1])
+        print("===u10====")
+        print(u10rshp[50])
         
         # V10M 10-meter_northward_wind [m s-1]
         v10 = VGRD.ReadAsArray(minX,minY,xSize,ySize)
         v10rshp =np.reshape(v10,v10.shape[0]*v10.shape[1])
+        print("===v10====")
+        print(v10rshp[50])
         
         
         #====get layer data==========
@@ -440,16 +448,17 @@ class RTTOV:
             count+=1
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
-        print "====orig max QV============"
-        print np.max(qv)
+#        print "====orig max QV============"
+#        print np.max(qv)
 #        qv2 = qv/(1e-6*(287.0/461.5))
         qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
-        print(qvrshp[0,:])
+        print("==QV profile====")
+        print(qvrshp[50,:])
 #        qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]])
-        print "====Min QV============"
-        print np.min(qvrshp)
-        print "====Max QV============"
-        print np.max(qvrshp)
+#        print "====Min QV============"
+#        print np.min(qvrshp)
+#        print "====Max QV============"
+#        print np.max(qvrshp)
         
         
         #layers air temperature [C]
@@ -478,7 +487,11 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
         trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T
 #        trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]])
-#        print(trshp[:,0])
+        print("===Temp profile====")
+        print(trshp[:,0])
+        
+        print("===skin temp====")
+        print(trshp[:,0])
 #        
 #        print "====Min Temp============"
 #        print np.min(trshp)
