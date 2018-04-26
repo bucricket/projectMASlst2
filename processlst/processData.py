@@ -485,16 +485,15 @@ class RTTOV:
         print(ul)
         print(lr)
         # The data is lat/lon and upside down so [0,0] = [-90.0,-180.0]
-        maxX = int((360+(lr[0]/0.5)))
-        minX = int((360+(ul[0]/0.5)))
-#        if lr[0]>0:
-#           maxX = int(abs((lr[0]/0.5))+360)
-#        else:
-#           maxX = int(abs((lr[0]/0.5))+360)
-#        if lr[0]>0:
-#           minX = int(abs((ul[0]/0.5))+360)
-#        else:
-#           minX = int(abs((ul[0]/0.5))+360)
+        if lr[0]<0:
+            maxX = int((360+(lr[0]/0.5)))
+        else:
+            maxX = int(((lr[0]/0.5)))
+        if ul[0]<0:
+            minX = int((360+(ul[0]/0.5)))
+        else:
+            minX = int(((ul[0]/0.5)))
+
         maxY = int((90-(lr[1]))/0.5)
         minY = int((90-(ul[1]))/0.5)
 #        minY = int((90)-(ul[1])/0.5)
@@ -516,7 +515,7 @@ class RTTOV:
             band = dataset.GetRasterBand(i)
             var = band.GetMetadata_List()[1]
             var2 = band.GetMetadata_List()[6]
-#            print var,var2
+            print var,var2
             if (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=0-SFC'):
                 TMPSFC = dataset.GetRasterBand(i)
             elif (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=2-HTGL'):
