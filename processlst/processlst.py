@@ -313,6 +313,8 @@ def runRTTOV(profileDict):
         # Do not supply a channel list for SEVIRI: this returns emissivity/BRDF values for all
         # *loaded* channels which is what is required
         surfemisrefl_tirs[0,:,:] = irAtlas.getEmisBrdf(tirsRttov)
+        print("Surface Emmisivity")
+        print(surfemisrefl_tirs[0,0,0])
 
     except pyrttov.RttovError as e:
         # If there was an error the emissivities/BRDFs will not have been modified so it
