@@ -673,7 +673,7 @@ class Landsat:
         #Process downwelling radiance
 #        RadDown = np.flipud(np.resize(tirsRttov.Rad2Down[:,channel,nlevels-2],origShap))
         RadDown = np.resize(tirsRttov.Rad2Down[:,channel,1],origShap)
-        print(tirsRttov.Rad2Down[0,channel,:])
+        print(tirsRttov.Rad2Dnclear[0,channel,:])
         tempName = os.path.join(self.landsatDataBase,'RadDown.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
         writeArray2Tiff(RadDown,lats[:,0],lons[0,:],tempName)
@@ -744,6 +744,7 @@ class Landsat:
         print trans
 #        surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
         surfRad =(ThermalRad-RadUp-trans*(1-emis)*RadDown)/trans*emis
+#        ThermalRad = surfRad*trans*emis+RadUp+trans*(1-emis)*RadDown
         #get Kappa constants from Landsat
 
 #        LST = np.array(self.Kappa2*(1/np.log(self.Kappa1/surfRad)), dtype='float32')
