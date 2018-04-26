@@ -314,7 +314,7 @@ def runRTTOV(profileDict):
         # *loaded* channels which is what is required
         surfemisrefl_tirs[0,:,:] = irAtlas.getEmisBrdf(tirsRttov)
         print("Surface Emmisivity")
-        print(surfemisrefl_tirs.max)
+        print(surfemisrefl_tirs.max())
 
     except pyrttov.RttovError as e:
         # If there was an error the emissivities/BRDFs will not have been modified so it
