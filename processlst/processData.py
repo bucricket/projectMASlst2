@@ -340,10 +340,150 @@ class RTTOV:
         
         return outDict
 
+def getCFSR(self):
+        """ function to download and geo-process CFSR data """
+        
+        # set Met dataset geo info
+        CFSR_ulLat = 90.0
+        CFSR_ulLon = -180.0
+        CFSRLatRes = 0.50
+        CFSRLonRes = 0.50
+        inRes = [CFSRLonRes,CFSRLatRes]
+        inUL = [CFSR_ulLon,CFSR_ulLat]
+        inProj4 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
+        
+        #===Open CFSR file=================
+        dailyPath = os.path.join(self.metBase,'%s' % self.scene) 
+        if not os.path.exists(dailyPath):
+            os.makedirs(dailyPath)
+        ncdcURL = 'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_analysis_pgbh/'
+        dateDiff = (datetime.today()-self.d).days
+        if (dateDiff<7):
+            ncdcURL = 'http://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/'
+
+        iHour = (int(self.hr/6.)*6.)
+        fHour = self.hr-iHour
+        hr1file = 'cdas1.t%02dz.pgrbh%02d.grib2' % (iHour,fHour)
+        pydapURL = os.path.join(ncdcURL,"%s" % self.year,"%d%02d" % (self.year,self.month),"%d%02d%02d" % (self.year,self.month,self.day),hr1file)
+        outFN = os.path.join(os.getcwd(),hr1file)
+        getHTTPdata(pydapURL,outFN)
+        print pydapURL
+        
+        #=====Surface Pressure=============        
+        grbs = pygrib.open(outFN)
+
+        sfcP = []
+        for grb in grbs:
+            if grb.name == 'Surface pressure' and grb.typeOfLevel == 'surface': 
+                sfcP.append(grb.values)
+        opdata = sfcP[0]
+        #---flip data so ul -180,90-----------      
+        b = opdata[:,:360]
+        c = opdata[:,360:]
+        flipped = np.hstack((c,b))
+        print np.shape(flipped)
+        #----write out global dataset to gTiff--------
+        outfile = os.path.join(dailyPath,'%s_p.tiff' % (self.sceneID))
+        outFormat = gdal.GDT_Float32
+        writeArray2Tiff(flipped.astype(float),inRes,inUL,inProj4,outfile,outFormat)
+        
+#        subsetFile = outfile[:-5]+'Sub.tiff'
+        subsetFile = os.path.join(self.met_path,'%s_p.tiff' % (self.sceneID))
+        optionList = ['-overwrite', '-s_srs', '%s' % inProj4,'-t_srs','%s' % self.proj4,\
+                '-te', '%f' % self.ulx, '%f' % self.lry,'%f' % self.lrx,'%f' % self.uly,'-r', 'bilinear',\
+                '-ts', '%f' % self.ncol, '%f' % self.nrow ,'-multi','-of','GTiff','%s' % outfile, '%s' % subsetFile]
+        print "running pydisalexi from Aug. 11"
+        warp(optionList)   
+        
+        #====Wind Speed================        
+        grbs.rewind()
+        Ucomp = []
+        for grb in grbs:
+            if grb.name == 'U component of wind' and grb.typeOfLevel == 'sigma': 
+                Ucomp.append(grb.values)
+        Uopdata = Ucomp[0]
+        
+        grbs.rewind()
+        Vcomp = []
+        for grb in grbs:
+            if grb.name == 'V component of wind' and grb.typeOfLevel == 'sigma': 
+                Vcomp.append(grb.values)
+        Vopdata = Vcomp[0]
+        
+        wind = np.sqrt(Uopdata**2+Vopdata**2)
+        #---flip data so ul -180,90-----------      
+        b = wind[:,:360]
+        c = wind[:,360:]
+        flipped = np.hstack((c,b))
+        #----write out global dataset to gTiff--------
+        
+        outfile = os.path.join(dailyPath,'%s_u.tiff' % (self.sceneID))
+        outFormat = gdal.GDT_Float32
+        writeArray2Tiff(flipped.astype(float),inRes,inUL,inProj4,outfile,outFormat)
+        
+#        subsetFile = outfile[:-5]+'Sub.tiff'
+        subsetFile = os.path.join(self.met_path,'%s_u.tiff' % (self.sceneID))
+        optionList = ['-overwrite', '-s_srs', '%s' % inProj4,'-t_srs','%s' % self.proj4,\
+                '-te', '%f' % self.ulx, '%f' % self.lry,'%f' % self.lrx,'%f' % self.uly,'-r', 'bilinear',\
+                '-ts', '%f' % self.ncol, '%f' % self.nrow,'-multi','-of','GTiff','%s' % outfile, '%s' % subsetFile]
+        
+        warp(optionList)
+        
+        #===== Specific humidity =============
+        grbs.rewind()
+        specH = []
+        for grb in grbs:
+            if grb.name == 'Specific humidity' and grb.typeOfLevel == 'hybrid': 
+                specH .append(grb.values)
+        opdata = specH [0]
+        #---flip data so ul -180,90-----------      
+        b = opdata[:,:360]
+        c = opdata[:,360:]
+        flipped = np.hstack((c,b))
+        #----write out global dataset to gTiff--------
+        
+        outfile = os.path.join(dailyPath,'%s_q2.tiff' % (self.sceneID))
+        outFormat = gdal.GDT_Float32
+        writeArray2Tiff(flipped.astype(float),inRes,inUL,inProj4,outfile,outFormat)
+        
+#        subsetFile = outfile[:-5]+'Sub.tiff'
+        subsetFile = os.path.join(self.met_path,'%s_q2.tiff' % (self.sceneID))
+        optionList = ['-overwrite', '-s_srs', '%s' % inProj4,'-t_srs','%s' % self.proj4,\
+                '-te', '%f' % self.ulx, '%f' % self.lry,'%f' % self.lrx,'%f' % self.uly,'-r', 'bilinear',\
+                '-ts', '%f' % self.ncol, '%f' % self.nrow,'-multi','-of','GTiff','%s' % outfile, '%s' % subsetFile]
+        warp(optionList)     
+        
+        #===== Temperature 2m =============
+        grbs.rewind()
+        Temp = []
+        for grb in grbs:
+            if grb.name == 'Temperature' and grb.typeOfLevel == 'sigma': 
+                Temp.append(grb.values)
+        opdata = Temp[0]
+        #---flip data so ul -180,90-----------      
+        b = opdata[:,:360]
+        c = opdata[:,360:]
+        flipped = np.hstack((c,b))
+        #----write out global dataset to gTiff--------
+        
+        outfile = os.path.join(dailyPath,'%s_Ta.tiff' % (self.sceneID))
+        outFormat = gdal.GDT_Float32
+        writeArray2Tiff(flipped.astype(float),inRes,inUL,inProj4,outfile,outFormat)
+        
+#        subsetFile = outfile[:-5]+'Sub.tiff'
+        subsetFile = os.path.join(self.met_path,'%s_Ta.tiff' % (self.sceneID))
+        optionList = ['-overwrite', '-s_srs', '%s' % inProj4,'-t_srs','%s' % self.proj4,\
+                '-te', '%f' % self.ulx, '%f' % self.lry,'%f' % self.lrx,'%f' % self.uly,'-r', 'bilinear',\
+                '-ts', '%f' % self.ncol, '%f' % self.nrow,'-multi','-of','GTiff','%s' % outfile, '%s' % subsetFile]
+        warp(optionList) 
+        shutil.rmtree(dailyPath)
+        
     def preparePROFILEdataCFSR(self):
 
         ul = [self.ulLon-1.5,self.ulLat+1.5]
         lr = [self.lrLon+1.5,self.lrLat-1.5]
+        print(ul)
+        print(lr)
         # The data is lat/lon and upside down so [0,0] = [-90.0,-180.0]
         maxX = int((360+(lr[0]/0.5)))
         minX = int((360+(ul[0]/0.5)))
