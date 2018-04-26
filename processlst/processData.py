@@ -590,7 +590,7 @@ class RTTOV:
 #        print "====orig max QV============"
 #        print np.max(qv)
 #        qv2 = qv/(1e-6*(287.0/461.5))
-        qv = qv[::-1, :, :]
+#        qv = qv[::-1, :, :]
         qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
         print("==QV profile====")
         print(qvrshp[50,:])
@@ -621,8 +621,8 @@ class RTTOV:
             t[count,:,:] = d.ReadAsArray(minX,minY,xSize,ySize)+273.15 #convert to K
             pl[count,:,:] = np.tile(level,[ySize,xSize])/100. # convert from pa to hpa
             count+=1
-        t = t[::-1, :, :]
-        pl = pl[::-1, :, :]
+#        t = t[::-1, :, :]
+#        pl = pl[::-1, :, :]
         #tIn=open_dods(fullUrl+'?T[0:1:7][0,:1:71][0:1:360][0:1:575]')
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
