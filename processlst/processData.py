@@ -672,8 +672,8 @@ class Landsat:
         
         #Process downwelling radiance
 #        RadDown = np.flipud(np.resize(tirsRttov.Rad2Down[:,channel,nlevels-2],origShap))
-        RadDown = np.resize(tirsRttov.Rad2Down[:,channel,1],origShap)
-        print(tirsRttov.Rad2Dnclear[0,channel,:])
+        RadDown = np.resize(tirsRttov.Rad2DnClear[:,channel],origShap)
+        print(tirsRttov.Rad2DnClear[0,channel,:])
         tempName = os.path.join(self.landsatDataBase,'RadDown.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
         writeArray2Tiff(RadDown,lats[:,0],lons[0,:],tempName)
@@ -691,7 +691,7 @@ class Landsat:
         
         #Process upwelling radiance
 #        RadUp = np.flipud(np.resize(tirsRttov.Rad2Up[:,channel,nlevels-2],origShap))
-        RadUp = np.resize(tirsRttov.Rad2Up[:,channel,1],origShap)
+        RadUp = np.resize(tirsRttov.Rad2UpClear[:,channel],origShap)
         tempName = os.path.join(self.landsatDataBase,'RadUp.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
 
