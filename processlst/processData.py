@@ -486,11 +486,11 @@ class RTTOV:
         print(lr)
         # The data is lat/lon and upside down so [0,0] = [-90.0,-180.0]
         if lr[0]<0:
-            maxX = int((360+(lr[0]/0.5)))
+            maxX = int((360+((180-lr[0])/0.5)))
         else:
             maxX = int(((lr[0]/0.5)))
         if ul[0]<0:
-            minX = int((360+(ul[0]/0.5)))
+            minX = int((360+((180-ul[0])/0.5)))
         else:
             minX = int(((ul[0]/0.5)))
 
@@ -515,7 +515,7 @@ class RTTOV:
             band = dataset.GetRasterBand(i)
             var = band.GetMetadata_List()[1]
             var2 = band.GetMetadata_List()[6]
-            print var,var2
+#            print var,var2
             if (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=0-SFC'):
                 TMPSFC = dataset.GetRasterBand(i)
             elif (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=2-HTGL'):
@@ -627,10 +627,8 @@ class RTTOV:
         trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T
 #        trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]])
         print("===Temp profile====")
-        print(trshp[:,0])
-        
-        print("===skin temp====")
-        print(trshp[:,0])
+        print(trshp[0,:])
+
 #        
 #        print "====Min Temp============"
 #        print np.min(trshp)
