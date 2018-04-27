@@ -543,6 +543,7 @@ class RTTOV:
         print(t2rshp[50])
         #2m specific humidity [kg kg -1] -> 2 m water vapor [ppmv]
         q = SPFH.ReadAsArray(minX,minY,xSize,ySize)
+        q/=10.
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
         q = q/(1e-6*(287.0/461.5))
@@ -589,6 +590,7 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
 #        print "====orig max QV============"
 #        print np.max(qv)
+        qv/=10.
         qv = qv/(1e-6*(287.0/461.5))
 #        qv = qv[::-1, :, :]
         qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
