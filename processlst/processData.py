@@ -545,7 +545,7 @@ class RTTOV:
         q = SPFH.ReadAsArray(minX,minY,xSize,ySize)
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
-#        q2 = q/(1e-6*(287.0/461.5))
+        q = q/(1e-6*(287.0/461.5))
         q2rshp =np.reshape(q,q.shape[0]*q.shape[1])
         print("===2m q====")
         print(q2rshp[50])
@@ -589,7 +589,7 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
 #        print "====orig max QV============"
 #        print np.max(qv)
-#        qv2 = qv/(1e-6*(287.0/461.5))
+        qv = qv/(1e-6*(287.0/461.5))
 #        qv = qv[::-1, :, :]
         qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
         print("==QV profile====")
