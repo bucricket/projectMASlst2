@@ -266,7 +266,9 @@ def runRTTOV(profileDict):
     tirsRttov.Options.StoreTrans = True
     tirsRttov.Options.StoreRad2 = True
     tirsRttov.Options.VerboseWrapper = True
-    tirsRttov.Options.ApplyRegLimits = True
+#    tirsRttov.Options.ApplyRegLimits = True
+    tirsRttov.Options.RegLimitExtrap = True
+    tirsRttov.Options.Nthreads = -1
 
 
     # Load the instruments:
