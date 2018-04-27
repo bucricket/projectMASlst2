@@ -496,8 +496,7 @@ class RTTOV:
 
         maxY = int((90-(lr[1]))/0.5)
         minY = int((90-(ul[1]))/0.5)
-#        minY = int((90)-(ul[1])/0.5)
-#        maxY = int((90)-(lr[1])/0.5)
+
         xSize = (maxX-minX)
         ySize = (maxY-minY)
         doy = (datetime.date(self.year,self.month,self.day)-datetime.date(self.year,1,1)).days+1
@@ -543,7 +542,7 @@ class RTTOV:
         print(t2rshp[50])
         #2m specific humidity [kg kg -1] -> 2 m water vapor [ppmv]
         q = SPFH.ReadAsArray(minX,minY,xSize,ySize)
-        q/=10.
+#        q/=10.
         # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
         q = q/(1e-6*(287.0/461.5))
@@ -590,7 +589,7 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
 #        print "====orig max QV============"
 #        print np.max(qv)
-        qv/=10.
+#        qv/=10.
         qv = qv/(1e-6*(287.0/461.5))
 #        qv = qv[::-1, :, :]
         qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
@@ -865,7 +864,8 @@ class Landsat:
         Lg = None
         
         #Process transmission
-        trans = np.flipud(np.resize(tirsRttov.TauTotal[:,channel],origShap))
+#        trans = np.flipud(np.resize(tirsRttov.TauTotal[:,channel],origShap))
+        trans = np.resize(tirsRttov.TauTotal[:,channel],origShap)
         tempName = os.path.join(self.landsatDataBase,'trans.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
         writeArray2Tiff(trans,lats[:,0],lons[0,:],tempName)
@@ -899,9 +899,9 @@ class Landsat:
         emis[emis<0.000001] = np.nan
         print "=====trans=========="
         print trans
-#        surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
-        surfRad =(ThermalRad-RadUp-trans*(1-emis)*RadDown)/trans*emis
-#        ThermalRad = surfRad*trans*emis+RadUp+trans*(1-emis)*RadDown
+        surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
+#        surfRad =(ThermalRad-RadUp-trans*(1-emis)*RadDown)/trans*emis
+        ThermalRad = surfRad*trans*emis+RadUp+trans*(1-emis)*RadDown
         #get Kappa constants from Landsat
 
 #        LST = np.array(self.Kappa2*(1/np.log(self.Kappa1/surfRad)), dtype='float32')
