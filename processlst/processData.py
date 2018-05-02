@@ -685,11 +685,11 @@ class Landsat:
         Lg = gdal.Open(landsat)
         BT= Lg.ReadAsArray()/10.
         print("===Brightness Temp=====")
-        print(BT)
+        print(BT[6000,1500])
         #=====get radiance from BT=========
         ThermalRad = self.Kappa1/(np.exp(self.Kappa2/BT)-1)
         print("L8 Rad W/(m2 sr micrometer)")
-        print(ThermalRad[4000,3000])
+        print(ThermalRad[6000,1500])
 #        BT = Kappa2/log((kappa1/rad)+1)
 #        log((kappa1/rad)+1) = Kappa2/BT
 #        (kappa1/rad)+1 = exp(kappa2/BT)
@@ -728,7 +728,7 @@ class Landsat:
 #        RadDown = (RadDown*(nu4**2/10**7))#*.001
         RadDown = RadDown*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
         print("RadDown W/(m2 sr micrometer)")
-        print(RadDown[4000,3000])
+        print(RadDown[6000,1500])
         Lg = None
         
         #Process upwelling radiance
@@ -748,7 +748,7 @@ class Landsat:
 #        RadUp = (RadUp*(nu4**2/10**7))#*.001
         RadUp = RadUp*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
         print("RadUp W/(m2 sr micrometer)")
-        print(RadUp[4000,3000])
+        print(RadUp[6000,1500])
         Lg = None
         
         #Process transmission
@@ -786,11 +786,11 @@ class Landsat:
         # calcualte LST
         emis[emis<0.000001] = np.nan
         print "=====trans=========="
-        print(trans[4000,3000])
+        print(trans[6000,1500])
 
         surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
         print("SurfRad")
-        print(surfRad[4000,3000])
+        print(surfRad[6000,1500])
 #        rad_observed = (((radiance_therm - upwelled)/transmission)-(1-emissivity)*downwelled)/emissivity
 #        surfRad =(ThermalRad-RadUp-trans*(1-emis)*RadDown)/trans*emis
 #        ThermalRad = surfRad*trans*emis+RadUp+trans*(1-emis)*RadDown
