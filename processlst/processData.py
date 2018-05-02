@@ -711,8 +711,8 @@ class Landsat:
         nu4 = 1/(10.895*0.0001) # convert to cm
         
         #Process downwelling radiance
-#        RadDown = np.flipud(np.resize(tirsRttov.Rad2Down[:,channel,nlevels-2],origShap))
-        RadDown = np.resize(tirsRttov.Rad2DnClear[:,channel],origShap)
+        RadDown = np.flipud(np.resize(tirsRttov.Rad2Down[:,channel,nlevels-2],origShap))
+#        RadDown = np.resize(tirsRttov.Rad2DnClear[:,channel],origShap)
 #        print(tirsRttov.Rad2DnClear[0,channel])
         tempName = os.path.join(self.landsatDataBase,'RadDown.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
@@ -732,8 +732,8 @@ class Landsat:
         Lg = None
         
         #Process upwelling radiance
-#        RadUp = np.flipud(np.resize(tirsRttov.Rad2Up[:,channel,nlevels-2],origShap))
-        RadUp = np.resize(tirsRttov.Rad2UpClear[:,channel],origShap)
+        RadUp = np.flipud(np.resize(tirsRttov.Rad2Up[:,channel,nlevels-2],origShap))
+#        RadUp = np.resize(tirsRttov.Rad2UpClear[:,channel],origShap)
         tempName = os.path.join(self.landsatDataBase,'RadUp.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
 
