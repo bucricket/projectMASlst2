@@ -726,7 +726,8 @@ class Landsat:
         Lg = gdal.Open(resampName2)
         RadDown = Lg.ReadAsArray()
 #        RadDown = (RadDown*(nu4**2/10**7))#*.001
-        RadDown = RadDown*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+#        RadDown = RadDown*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+        RadDown = RadDown*0.1 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
         print("RadDown W/(m2 sr micrometer)")
         print(RadDown[6000,1500])
         Lg = None
@@ -746,7 +747,8 @@ class Landsat:
         Lg = gdal.Open(resampName2)
         RadUp = Lg.ReadAsArray()
 #        RadUp = (RadUp*(nu4**2/10**7))#*.001
-        RadUp = RadUp*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+#        RadUp = RadUp*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+        RadUp = RadUp*0.1
         print("RadUp W/(m2 sr micrometer)")
         print(RadUp[6000,1500])
         Lg = None
