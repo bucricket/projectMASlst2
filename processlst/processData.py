@@ -684,6 +684,8 @@ class Landsat:
         landsat = os.path.join("%s_bt_band10.tif" % self.productIDpath)
         Lg = gdal.Open(landsat)
         BT= Lg.ReadAsArray()/10.
+        print("===Brightness Temp=====")
+        print(BT)
         #=====get radiance from BT=========
         ThermalRad = self.Kappa1/(np.exp(self.Kappa2/BT)-1)
         print("L8 Rad W/(m2 sr micrometer)")
