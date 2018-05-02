@@ -686,6 +686,13 @@ class Landsat:
         BT= Lg.ReadAsArray()/10.
         #=====get radiance from BT=========
         ThermalRad = self.Kappa1/(np.exp(self.Kappa2/BT)-1)
+        print("L8 Rad W/(m2 sr micrometer)")
+        print(ThermalRad)
+#        BT = Kappa2/log((kappa1/rad)+1)
+#        log((kappa1/rad)+1) = Kappa2/BT
+#        (kappa1/rad)+1 = exp(kappa2/BT)
+#        (kappa1/rad) = exp(kappa2/BT)-1
+#        rad = kappa1/(exp(kappa2/BT)-1)
         Lg = None
     
         origShap = merraDict['origShape']
@@ -704,7 +711,7 @@ class Landsat:
         #Process downwelling radiance
 #        RadDown = np.flipud(np.resize(tirsRttov.Rad2Down[:,channel,nlevels-2],origShap))
         RadDown = np.resize(tirsRttov.Rad2DnClear[:,channel],origShap)
-        print(tirsRttov.Rad2DnClear[0,channel])
+#        print(tirsRttov.Rad2DnClear[0,channel])
         tempName = os.path.join(self.landsatDataBase,'RadDown.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
         writeArray2Tiff(RadDown,lats[:,0],lons[0,:],tempName)
@@ -718,6 +725,8 @@ class Landsat:
         RadDown = Lg.ReadAsArray()
 #        RadDown = (RadDown*(nu4**2/10**7))#*.001
         RadDown = RadDown*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+        print("RadDown W/(m2 sr micrometer)")
+        print(RadDown)
         Lg = None
         
         #Process upwelling radiance
@@ -736,6 +745,8 @@ class Landsat:
         RadUp = Lg.ReadAsArray()
 #        RadUp = (RadUp*(nu4**2/10**7))#*.001
         RadUp = RadUp*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+        print("RadUp W/(m2 sr micrometer)")
+        print(RadUp)
         Lg = None
         
         #Process transmission
