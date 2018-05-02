@@ -630,7 +630,7 @@ class RTTOV:
         trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T
 #        trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]])
         print("===Temp profile====")
-        print(trshp[0,:])
+        print(trshp[50,:])
 
 #        
 #        print "====Min Temp============"
@@ -640,6 +640,8 @@ class RTTOV:
         
         #mid_level_pressure [Pa]
         plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T
+        print("===Press profile====")
+        print(plrshp[50,:])
 #        plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]])
         #qrshp =np.reshape(q,q.shape[0]*q.shape[1])
         
@@ -656,6 +658,8 @@ class RTTOV:
         lon = np.hstack((c,b))
         lonIn = lon[minY:maxY,minX:maxX]
         lonrshp =np.reshape(lonIn,lonIn.shape[0]*lonIn.shape[1])
+        print("===lat,lon====")
+        print(latrshp[50],lonrshp[50])
         el = np.repeat(0.0,v10.shape[0]*v10.shape[1]) #NEED DEM
 #        print latIn
 #        print lonIn
@@ -667,7 +671,8 @@ class RTTOV:
         fetch = np.repeat(100000,v10.shape[0]*v10.shape[1])
         satzen = np.repeat(0.0,v10.shape[0]*v10.shape[1])
         satazi = np.repeat(0.0,v10.shape[0]*v10.shape[1])
-        
+        print("sunzen,sunazi")
+        print(self.solZen,self.solAzi)
         # Units for gas profiles
         # 1= Kg/Kg over moist air
         # 2 = ppmv over moist air
@@ -675,6 +680,8 @@ class RTTOV:
         
         # datetimes[6][nprofiles]: yy, mm, dd, hh, mm, ss
         datetimes = np.tile([self.year, self.month, self.day, cfsrHRs[0], 0, 0],(v10.shape[0]*v10.shape[1],1))
+        print("date")
+        print(datetimes[50])
         
         # angles[4][nprofiles]: satzen, satazi, sunzen, sunazi
         #get from landsat MTL
