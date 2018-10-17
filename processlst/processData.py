@@ -7,7 +7,7 @@ Created on Sat Feb 11 21:33:18 2017
 """
 import os 
 import numpy as np
-from datetime import datetime
+import datetime
 import subprocess
 from osgeo import gdal
 import h5py
@@ -16,17 +16,150 @@ from .landsatTools import landsat_metadata,GeoTIFF
 from .utils import folders,writeArray2Tiff,getHTTPdata
 from pydap.cas import urs
 from pydap import client
+import urllib2,base64
+import sqlite3
+import pandas as pd
+import glob
 
 
+ncdcURL = 'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_analysis_pgbh/'
+ncdcfluxURL = 'https://nomads.ncdc.noaa.gov/modeldata/cfsv2_analysis_flxf/'
 
+realtimeURL = 'http://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/'
+base = os.getcwd()
+cacheDir = os.path.abspath(os.path.join(base,os.pardir,"MODEL_DATA"))
+
+def is_odd(num):
+   return num % 2 != 0
+
+def getGrabTime(time):  
+    time*=100
+    return int(((time/600)+1)*600)/100
+
+
+def getGrabTimeInv(grab_time,doy):
+    if is_odd(grab_time):
+        hr = grab_time-3
+        forecastHR = 3
+    else:
+        hr = grab_time
+        forecastHR = 0
+    if hr == 24:
+        hr = 0
+        doy+=1
+    return hr, forecastHR,doy 
+
+class earthDataHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
+    def http_error_302(self, req, fp, code, msg, headers):
+        return urllib2.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
+    
+
+def getHTTPdata(url,outFN,auth=None):
+    request = urllib2.Request(url) 
+    if not (auth == None):
+        username = auth[0]
+        password = auth[1]
+        base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+        request.add_header("Authorization", "Basic %s" % base64string) 
+    
+    cookieprocessor = urllib2.HTTPCookieProcessor()
+    opener = urllib2.build_opener(earthDataHTTPRedirectHandler, cookieprocessor)
+    urllib2.install_opener(opener) 
+    r = opener.open(request)
+    result = r.read()
+    
+    with open(outFN, 'wb') as f:
+        f.write(result)
+        
+def downloadCFSRpython(hr1file,user,passwd,year=None,doy=None): 
+    auth = (user,passwd)
+    if year==None:
+        dd = datetime.date.today()+datetime.timedelta(days=-1)
+        year = dd.year
+        
+    if doy==None:
+        doy = (datetime.date.today()-datetime.date(year,1,1)).days
+        dd = datetime.date.today()+datetime.timedelta(days=-1)
+        month = dd.month
+        day = dd.day
+        url = realtimeURL+'cdas.%d%02d%02d/' % (year,month,day)
+    else:
+        dd = datetime.datetime(year, 1, 1) + datetime.timedelta(doy)
+        if (datetime.date.today()-datetime.date(year,dd.month,dd.day)).days > 7:
+            url = os.path.join(ncdcURL,"%s" % year,"%d%02d" % (year,dd.month),
+                                "%d%02d%02d" % (year,dd.month,dd.day))
+        else:
+            url = realtimeURL+'cdas.%d%02d%02d/' % (year,dd.month,dd.day)
+    CFSR_path = os.path.join(cacheDir,'CFSR')
+    dstpath =  os.path.join(CFSR_path,"%d" % year,"%03d" % doy)
+    if not os.path.exists(dstpath):
+        os.makedirs(dstpath)  
+    print url
+    pydapURL = os.path.join(url,hr1file)
+    outFN = os.path.join(dstpath,hr1file)
+    if not os.path.exists(outFN):
+        print "downloading file...%s" % hr1file
+        getHTTPdata(pydapURL,outFN,auth)
+
+def updateModelDataDB(landsatDB,filenames,cacheDir,product):
+    
+    db_fn = os.path.join(cacheDir,"model_data.db")
+    
+    date = landsatDB.acquisitionDate
+    ullat = landsatDB.upperLeftCornerLatitude
+    ullon = landsatDB.upperLeftCornerLongitude
+    lllat = landsatDB.lowerRightCornerLatitude
+    lllon = landsatDB.lowerRightCornerLongitude
+    productIDs = landsatDB.LANDSAT_PRODUCT_ID
+    
+    if not os.path.exists(db_fn):
+        conn = sqlite3.connect( db_fn )
+        landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
+                      "upperLeftCornerLongitude":ullon,
+                      "lowerRightCornerLatitude":lllat,
+                      "lowerRightCornerLongitude":lllon,
+                      "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
+        landsat_df = pd.DataFrame.from_dict(landsat_dict)
+        landsat_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+        conn.close()
+    else:
+        conn = sqlite3.connect( db_fn )
+        res = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = res.fetchall()[0]
+        if (product in tables):
+            orig_df = pd.read_sql_query("SELECT * from %s" % product,conn)
+        else:
+            orig_df = pd.DataFrame()
+            
+        landsat_dict = {"acquisitionDate":date,"upperLeftCornerLatitude":ullat,
+                      "upperLeftCornerLongitude":ullon,
+                      "lowerRightCornerLatitude":lllat,
+                      "lowerRightCornerLongitude":lllon,
+                      "LANDSAT_PRODUCT_ID":productIDs,"filename":filenames}
+        landsat_df = pd.DataFrame.from_dict(landsat_dict)
+        orig_df = orig_df.append(landsat_df,ignore_index=True)
+        orig_df = orig_df.drop_duplicates(keep='last')
+        orig_df.to_sql("%s" % product, conn, if_exists="replace", index=False)
+        conn.close()
+
+def searchLandsatProductsDB(lat,lon,start_date,end_date,product,cacheDir):
+    db_fn = os.path.join(cacheDir,"landsat_products.db")
+    conn = sqlite3.connect( db_fn )
+
+    out_df = pd.read_sql_query("SELECT * from %s WHERE (acquisitionDate >= '%s')"
+                   "AND (acquisitionDate < '%s') AND (upperLeftCornerLatitude > %f )"
+                   "AND (upperLeftCornerLongitude < %f ) AND "
+                   "(lowerRightCornerLatitude < %f) AND "
+                   "(lowerRightCornerLongitude > %f)" % 
+                   (product,start_date,end_date,lat,lon,lat,lon),conn)   
+    conn.close()
+    return out_df        
 class RTTOV:
-    def __init__(self, filepath,username,password):
-        base = os.getcwd()
-        Folders = folders(base)  
+    def __init__(self, productIDpath,username,password): 
         self.earthLoginUser = username
         self.earthLoginPass = password   
-        self.landsatSR = Folders['landsat_SR']
-        meta = landsat_metadata(filepath)
+        self.productIDpath = productIDpath
+        meta = landsat_metadata(os.path.join('%s_MTL.txt' % self.productIDpath))
         self.productID = meta.LANDSAT_PRODUCT_ID
         self.scene = self.productID.split('_')[2]
         self.ulLat = meta.CORNER_UL_LAT_PRODUCT
@@ -41,7 +174,7 @@ class RTTOV:
         self.day = d.day
         self.hr = d.hour #UTC
 
-    def preparePROFILEdata(self):
+    def preparePROFILEdataMERRA(self):
 
         ul = [self.ulLon-1.5,self.ulLat+1.5]
         lr = [self.lrLon+1.5,self.lrLat-1.5]
@@ -131,6 +264,8 @@ class RTTOV:
         qv = np.squeeze(qvIn[hr,:,minY:maxY,minX:maxX])
         qv = qv/(1e-6*(287.0/461.5))
         qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
+        print("==QV profile====")
+        print(qvrshp[50,:])
         
         
         #layers air temperature [K]
@@ -140,6 +275,8 @@ class RTTOV:
         # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
         t = np.squeeze(tIn[hr,:,minY:maxY,minX:maxX])
         trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T
+        print("===Temp profile====")
+        print(trshp[50,:])
         
         #mid_level_pressure [Pa]
         
@@ -148,7 +285,8 @@ class RTTOV:
         pl = np.squeeze(plIn[hr,:,minY:maxY,minX:maxX]/100) # Pa to kPa
         plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T
         #qrshp =np.reshape(q,q.shape[0]*q.shape[1])
-        
+        print("===Press profile====")
+        print(plrshp[50,:])
         
         LAT = d.lat
         LON = d.lon
@@ -206,32 +344,261 @@ class RTTOV:
         'origShape':t2.shape}
         
         return outDict
+
+        
+    def preparePROFILEdataCFSR(self):
+
+        ul = [self.ulLon-1.5,self.ulLat+1.5]
+        lr = [self.lrLon+1.5,self.lrLat-1.5]
+        print(ul)
+        print(lr)
+        # The data is lat/lon and upside down so [0,0] = [-90.0,-180.0]
+        if lr[0]<0:
+            maxX = int((360+((180-lr[0])/0.5)))
+        else:
+            maxX = int(((lr[0]/0.5)))
+        if ul[0]<0:
+            minX = int((360+((180-ul[0])/0.5)))
+        else:
+            minX = int(((ul[0]/0.5)))
+
+        maxY = int((90-(lr[1]))/0.5)
+        minY = int((90-(ul[1]))/0.5)
+
+        xSize = (maxX-minX)
+        ySize = (maxY-minY)
+        doy = (datetime.date(self.year,self.month,self.day)-datetime.date(self.year,1,1)).days+1
+        CFSR_path = os.path.join(cacheDir,'CFSR')
+        dstpath =  os.path.join(CFSR_path,"%d" % self.year,"%03d" % doy)
+        #=====get surface data==========
+        overpass = getGrabTime(self.hr)
+        cfsrHRs = getGrabTimeInv(overpass,doy)
+        hr1file = 'cdas1.t%02dz.pgrbh%02d.grib2' % (cfsrHRs[0],cfsrHRs[1])
+        downloadCFSRpython(hr1file,self.earthLoginUser,self.earthLoginPass,self.year,doy)
+        outFN = os.path.join(dstpath,hr1file)
+        dataset = gdal.Open(outFN, gdal.GA_ReadOnly)
+                
+        for i in range(1,600):
+            band = dataset.GetRasterBand(i)
+            var = band.GetMetadata_List()[1]
+            var2 = band.GetMetadata_List()[6]
+#            print var,var2
+            if (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=0-SFC'):
+                TMPSFC = dataset.GetRasterBand(i)
+            elif (var == 'GRIB_ELEMENT=TMP') and (var2 == 'GRIB_SHORT_NAME=2-HTGL'):
+                TMP2 = dataset.GetRasterBand(i)
+            elif (var == 'GRIB_ELEMENT=VGRD') and (var2 == 'GRIB_SHORT_NAME=10-HTGL'):
+                VGRD = dataset.GetRasterBand(i)
+            elif (var == 'GRIB_ELEMENT=UGRD') and (var2 == 'GRIB_SHORT_NAME=10-HTGL'):
+                UGRD = dataset.GetRasterBand(i)
+            elif (var == 'GRIB_ELEMENT=SPFH') and (var2 == 'GRIB_SHORT_NAME=2-HTGL'):
+                SPFH = dataset.GetRasterBand(i)
+            elif (var == 'GRIB_ELEMENT=PRES') and (var2 == 'GRIB_SHORT_NAME=0-MSL'):
+                PRES = dataset.GetRasterBand(i)
+            else:
+                a =''
+        #surface presure [Pa]
+        surfacePressure = PRES.ReadAsArray(minX,minY,xSize,ySize)
+        sp = (surfacePressure/100) # Pa to hPa
+        sprshp =np.reshape(sp,sp.shape[0]*sp.shape[1])
+        print("===sfc press====")
+        print(sprshp[50])
+        #2m air Temp (C)
+        t2 = TMP2.ReadAsArray(minX,minY,xSize,ySize)+273.16 #convert to K
+        t2rshp =np.reshape(t2,t2.shape[0]*t2.shape[1])
+        print("===2m temp====")
+        print(t2rshp[50])
+        #2m specific humidity [kg kg -1] -> 2 m water vapor [ppmv]
+        q = SPFH.ReadAsArray(minX,minY,xSize,ySize)
+#        q/=10.
+        # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
+        # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
+        q = q/(1e-6*(287.0/461.5))
+        q2rshp =np.reshape(q,q.shape[0]*q.shape[1])
+        print("===2m q====")
+        print(q2rshp[50])
+        # skin temp [C]
+        skt = TMPSFC.ReadAsArray(minX,minY,xSize,ySize)+273.16 #convert to K
+        sktrshp =np.reshape(skt,skt.shape[0]*skt.shape[1])
+        print("===skin temp====")
+        print(sktrshp[50])
+        # U10M 10-meter_eastward_wind [m s-1]
+        u10 = UGRD.ReadAsArray(minX,minY,xSize,ySize)
+        u10rshp =np.reshape(u10,u10.shape[0]*u10.shape[1])
+        print("===u10====")
+        print(u10rshp[50])
+        
+        # V10M 10-meter_northward_wind [m s-1]
+        v10 = VGRD.ReadAsArray(minX,minY,xSize,ySize)
+        v10rshp =np.reshape(v10,v10.shape[0]*v10.shape[1])
+        print("===v10====")
+        print(v10rshp[50])
+        
+        
+        #====get layer data==========
+        
+        #layers specific humidity [kg kg -1] -> 2 m water vapor [ppmv]
+        count =0
+        bands = []
+        for i in range(1,380):
+            band = dataset.GetRasterBand(i)
+            var = band.GetMetadata_List()[1]
+            var2 = band.GetMetadata_List()[6]
+            if (var == 'GRIB_ELEMENT=SPFH') and (var2.split('-')[-1]=='ISBL'):
+                count+=1
+                bands.append(i)
+        qv = np.zeros([count,ySize,xSize])
+        count=0
+        for band in bands:
+            d = dataset.GetRasterBand(band)
+            qv[count,:,:] = d.ReadAsArray(minX,minY,xSize,ySize)
+            count+=1
+        # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
+        # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
+#        print "====orig max QV============"
+#        print np.max(qv)
+#        qv/=10.
+        qv = qv/(1e-6*(287.0/461.5))
+#        qv = qv[::-1, :, :]
+        qvrshp =np.reshape(qv,[qv.shape[0],qv.shape[1]*qv.shape[2]]).T
+        print("==QV profile====")
+        print(qvrshp[50,:])
+#        qvrshp =np.reshape(qv2,[qv2.shape[0],qv2.shape[1]*qv2.shape[2]])
+#        print "====Min QV============"
+#        print np.min(qvrshp)
+#        print "====Max QV============"
+#        print np.max(qvrshp)
+        
+        
+        #layers air temperature [C]
+        count =0
+        bands = []
+        for i in range(1,380):
+            band = dataset.GetRasterBand(i)
+            var = band.GetMetadata_List()[1]
+            var2 = band.GetMetadata_List()[6]
+            if (var == 'GRIB_ELEMENT=TMP') and (var2.split('-')[-1]=='ISBL'):
+                count+=1
+                bands.append(i)
+        t = np.zeros([count,ySize,xSize])
+        pl = np.zeros([count,ySize,xSize])
+        count=0
+        for band in bands:
+            d = dataset.GetRasterBand(band)
+            var2 = d.GetMetadata_List()[6]
+            level = int((var2.split('-')[0]).split('=')[-1])
+            t[count,:,:] = d.ReadAsArray(minX,minY,xSize,ySize)+273.15 #convert to K
+            pl[count,:,:] = np.tile(level,[ySize,xSize])/100. # convert from pa to hpa
+            count+=1
+#        t = t[::-1, :, :]
+#        pl = pl[::-1, :, :]
+        #tIn=open_dods(fullUrl+'?T[0:1:7][0,:1:71][0:1:360][0:1:575]')
+        # wv_mmr = 1.e-6 * wv_ppmv_layer * (Rair / Rwater)
+        # wv_mmr in kg/kg, Rair = 287.0, Rwater = 461.5
+        trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]]).T
+#        trshp =np.reshape(t,[t.shape[0],t.shape[1]*t.shape[2]])
+        print("===Temp profile====")
+        print(trshp[50,:])
+
+#        
+#        print "====Min Temp============"
+#        print np.min(trshp)
+#        print "====Max Temp============"
+#        print np.max(trshp)
+        
+        #mid_level_pressure [Pa]
+        plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]]).T
+        print("===Press profile====")
+        print(plrshp[50,:])
+#        plrshp =np.reshape(pl,[pl.shape[0],pl.shape[1]*pl.shape[2]])
+        #qrshp =np.reshape(q,q.shape[0]*q.shape[1])
+        
+        lons = range(-1800,1800,5)
+        lons = np.array(lons)/10.
+        lats = range(900,-905,-5)
+        lats = np.array(lats)/10.
+        lat = np.tile(lats,(len(lons),1)).T
+        latIn = lat[minY:maxY,minX:maxX]
+        latrshp =np.reshape(latIn,latIn.shape[0]*latIn.shape[1])
+        lon = np.tile(lons,(len(lats),1))
+        b = lon[:,:360]
+        c = lon[:,360:]
+        lon = np.hstack((c,b))
+        lonIn = lon[minY:maxY,minX:maxX]
+        lonrshp =np.reshape(lonIn,lonIn.shape[0]*lonIn.shape[1])
+        print("===lat,lon====")
+        print(latrshp[50],lonrshp[50])
+        el = np.repeat(0.0,v10.shape[0]*v10.shape[1]) #NEED DEM
+#        print latIn
+#        print lonIn
+        #check surface pressure
+        
+        
+        sunzen = np.repeat(self.solZen,v10.shape[0]*v10.shape[1])
+        sunazi = np.repeat(self.solAzi,v10.shape[0]*v10.shape[1])
+        fetch = np.repeat(100000,v10.shape[0]*v10.shape[1])
+        satzen = np.repeat(0.0,v10.shape[0]*v10.shape[1])
+        satazi = np.repeat(0.0,v10.shape[0]*v10.shape[1])
+        print("sunzen,sunazi")
+        print(self.solZen,self.solAzi)
+        # Units for gas profiles
+        # 1= Kg/Kg over moist air
+        # 2 = ppmv over moist air
+        gas_units = 1  
+        
+        # datetimes[6][nprofiles]: yy, mm, dd, hh, mm, ss
+        datetimes = np.tile([self.year, self.month, self.day, cfsrHRs[0], 0, 0],(v10.shape[0]*v10.shape[1],1))
+        print("date")
+        print(datetimes[50])
+        
+        # angles[4][nprofiles]: satzen, satazi, sunzen, sunazi
+        #get from landsat MTL
+        angles = np.vstack((satzen,satazi,sunzen,sunazi)).T
+        
+        # surftype[2][nprofiles]: surftype, watertype
+        surftype = np.zeros([angles.shape[0],2]) #NEED LAND/WATER mask
+        
+        # surfgeom[3][nprofiles]: lat, lon, elev
+        surfgeom = np.vstack((latrshp,lonrshp,el)).T
+        
+        # s2m[6][nprofiles]: 2m p, 2m t, 2m q, 10m wind u, v, wind fetch
+        s2m = np.vstack((sprshp,t2rshp,q2rshp,u10rshp,v10rshp,fetch)).T
+        
+        # skin[9][nprofiles]: skin T, salinity, snow_frac, foam_frac, fastem_coefsx5
+        sal = np.repeat(35.0,v10.shape[0]*v10.shape[1])
+        snow_frac = np.repeat(0.0,v10.shape[0]*v10.shape[1])
+        foam_frac= np.repeat(0.0,v10.shape[0]*v10.shape[1])
+        fastem_coef1 = np.repeat(3.0,v10.shape[0]*v10.shape[1])
+        fastem_coef2 = np.repeat(5.0,v10.shape[0]*v10.shape[1])
+        fastem_coef3 = np.repeat(15.0,v10.shape[0]*v10.shape[1])
+        fastem_coef4 = np.repeat(0.1,v10.shape[0]*v10.shape[1])
+        fastem_coef5 = np.repeat(0.3,v10.shape[0]*v10.shape[1])
+        
+        skin= np.vstack((sktrshp,sal,snow_frac,foam_frac,fastem_coef1,fastem_coef2,fastem_coef3,fastem_coef4,fastem_coef5)).T
     
+        outDict = {'P':plrshp,'T':trshp,'Q':qvrshp,'Angles':angles,'S2m':s2m,\
+        'Skin': skin,'SurfType':surftype,'SurfGeom':surfgeom,'Datetimes':datetimes,\
+        'origShape':t2.shape}
+        
+        return outDict    
 
 class Landsat:
-    def __init__(self, filepath,username,password):
+    def __init__(self, productIDpath,username,password):
         base = os.getcwd()
         Folders = folders(base)    
         self.earthLoginUser = username
         self.earthLoginPass = password
-        self.landsatLST = Folders['landsat_LST']
-        self.landsatSR = Folders['landsat_SR']
+        self.productIDpath = productIDpath
         self.landsatTemp = Folders['landsat_Temp']
         self.asterEmissivityBase= Folders['asterEmissivityBase']
         self.ASTERmosaicTemp = Folders['ASTERmosaicTemp']
         self.landsatDataBase = Folders['landsatDataBase']
         self.landsatEmissivityBase = Folders['landsatEmissivityBase']
-#        self.sceneID = filepath.split(os.sep)[-1][:-8]
-#        self.scene = self.sceneID[3:9]
-#        self.yeardoy = self.sceneID[9:16]
-        
-#        meta = landsat_metadata(os.path.join(self.landsatSR, 
-#                                                          self.scene,'%s_MTL.txt' % self.sceneID))
-        meta = landsat_metadata(filepath)
+        meta = landsat_metadata(os.path.join('%s_MTL.txt' % self.productIDpath))
         self.productID = meta.LANDSAT_PRODUCT_ID
         self.sceneID = meta.LANDSAT_SCENE_ID
         self.scene = self.productID.split('_')[2]
-        self.ls = GeoTIFF(os.path.join(self.landsatSR, self.scene,'%s_sr_band1.tif' % self.productID))
+        self.ls = GeoTIFF(os.path.join('%s_sr_band1.tif' % self.productIDpath))
         self.proj4 = self.ls.proj4
         self.inProj4 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
         self.ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT
@@ -250,7 +617,7 @@ class Landsat:
         self.landsatTime = meta.SCENE_CENTER_TIME[:-2]
         self.Kappa1 = meta.K1_CONSTANT_BAND_10
         self.Kappa2 = meta.K2_CONSTANT_BAND_10
-        d = datetime.strptime('%s%s' % (self.landsatDate,self.landsatTime),'%Y-%m-%d%H:%M:%S.%f')
+        d = datetime.datetime.strptime('%s%s' % (self.landsatDate,self.landsatTime),'%Y-%m-%d%H:%M:%S.%f')
         self.year = d.year
         self.month = d.month
         self.day = d.day
@@ -289,6 +656,14 @@ class Landsat:
                 writeArray2Tiff(EmisBand4,lats[:,0],lons[0,:],tempName)
        
         #mosaic ,reproject and save as geotiff
+        tifs = glob.glob(os.path.join(self.ASTERmosaicTemp,'*.tiff'))
+        finalFileVRT = '%s/mosaic.vrt' % self.ASTERmosaicTemp
+        finalFile = os.path.join(self.landsatEmissivityBase,'%s_EMIS.tiff' % self.sceneID)
+        outds = gdal.BuildVRT(finalFileVRT, tifs, options=gdal.BuildVRTOptions(srcNodata=0.))
+        
+        outds = gdal.Translate(finalFile, outds)
+        outds = None
+            
         mosaicTempFN = '%s/mosaic.vrt' % self.ASTERmosaicTemp
         mosaicVRTcommand = 'gdalbuildvrt -srcnodata 0 %s %s/*.tiff' % (mosaicTempFN,self.ASTERmosaicTemp)
         out = subprocess.check_output(mosaicVRTcommand, shell=True)
@@ -306,11 +681,20 @@ class Landsat:
     def processLandsatLST(self,tirsRttov,merraDict):
         
         # Landsat brightness temperature
-        landsat = os.path.join(self.landsatTemp,"%s_bt_band10.tif" % self.productID)
+        landsat = os.path.join("%s_bt_band10.tif" % self.productIDpath)
         Lg = gdal.Open(landsat)
         BT= Lg.ReadAsArray()/10.
+        print("===Brightness Temp=====")
+        print(BT[6000,1500])
         #=====get radiance from BT=========
         ThermalRad = self.Kappa1/(np.exp(self.Kappa2/BT)-1)
+        print("L8 Rad W/(m2 sr micrometer)")
+        print(ThermalRad[6000,1500])
+#        BT = Kappa2/log((kappa1/rad)+1)
+#        log((kappa1/rad)+1) = Kappa2/BT
+#        (kappa1/rad)+1 = exp(kappa2/BT)
+#        (kappa1/rad) = exp(kappa2/BT)-1
+#        rad = kappa1/(exp(kappa2/BT)-1)
         Lg = None
     
         origShap = merraDict['origShape']
@@ -328,6 +712,8 @@ class Landsat:
         
         #Process downwelling radiance
         RadDown = np.flipud(np.resize(tirsRttov.Rad2Down[:,channel,nlevels-2],origShap))
+#        RadDown = np.resize(tirsRttov.Rad2DnClear[:,channel],origShap)
+#        print(tirsRttov.Rad2DnClear[0,channel])
         tempName = os.path.join(self.landsatDataBase,'RadDown.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
         writeArray2Tiff(RadDown,lats[:,0],lons[0,:],tempName)
@@ -339,11 +725,16 @@ class Landsat:
         out = subprocess.check_output(command, shell=True)
         Lg = gdal.Open(resampName2)
         RadDown = Lg.ReadAsArray()
-        RadDown = (RadDown*(nu4**2/10**7))#*.001
+#        RadDown = (RadDown*(nu4**2/10**7))#*.001
+#        RadDown = RadDown*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+        RadDown = RadDown*0.1 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+        print("RadDown W/(m2 sr micrometer)")
+        print(RadDown[6000,1500])
         Lg = None
         
         #Process upwelling radiance
         RadUp = np.flipud(np.resize(tirsRttov.Rad2Up[:,channel,nlevels-2],origShap))
+#        RadUp = np.resize(tirsRttov.Rad2UpClear[:,channel],origShap)
         tempName = os.path.join(self.landsatDataBase,'RadUp.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
 
@@ -355,11 +746,16 @@ class Landsat:
         out = subprocess.check_output(command, shell=True)
         Lg = gdal.Open(resampName2)
         RadUp = Lg.ReadAsArray()
-        RadUp = (RadUp*(nu4**2/10**7))#*.001
+#        RadUp = (RadUp*(nu4**2/10**7))#*.001
+#        RadUp = RadUp*10e-7 # convert mW/(m2 sr cm-1) -> W/(m2 sr micrometer)
+        RadUp = RadUp*0.1
+        print("RadUp W/(m2 sr micrometer)")
+        print(RadUp[6000,1500])
         Lg = None
         
         #Process transmission
-        trans = np.flipud(np.resize(tirsRttov.TauTotal[:,channel],origShap))
+#        trans = np.flipud(np.resize(tirsRttov.TauTotal[:,channel],origShap))
+        trans = np.resize(tirsRttov.TauTotal[:,channel],origShap)
         tempName = os.path.join(self.landsatDataBase,'trans.tiff')
         resampName = os.path.join('%sReproj.tiff' % tempName[:-4])
         writeArray2Tiff(trans,lats[:,0],lons[0,:],tempName)
@@ -391,10 +787,19 @@ class Landsat:
         aster = None
         # calcualte LST
         emis[emis<0.000001] = np.nan
+        print "=====trans=========="
+        print(trans[6000,1500])
+
         surfRad =(((ThermalRad-RadUp)/trans)-(1-emis)*RadDown)/emis
+        print("SurfRad")
+        print(surfRad[6000,1500])
+#        rad_observed = (((radiance_therm - upwelled)/transmission)-(1-emissivity)*downwelled)/emissivity
+#        surfRad =(ThermalRad-RadUp-trans*(1-emis)*RadDown)/trans*emis
+#        ThermalRad = surfRad*trans*emis+RadUp+trans*(1-emis)*RadDown
         #get Kappa constants from Landsat
 
-        LST = np.array(self.Kappa2*(1/np.log(self.Kappa1/surfRad)), dtype='float32')
+#        LST = np.array(self.Kappa2*(1/np.log(self.Kappa1/surfRad)), dtype='float32')
+        LST = np.array(self.Kappa2*(1/np.log((self.Kappa1/surfRad)+1.)), dtype='float32')
 
         
         lstName = os.path.join(self.landsatTemp,'%s_lst.tiff'% self.sceneID)
