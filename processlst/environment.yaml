@@ -1,4 +1,4 @@
-name: processlai
+name: processlst
 dependencies:
     - python 2.7*
     - numpy
