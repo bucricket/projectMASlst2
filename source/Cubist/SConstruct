@@ -1,0 +1,40 @@
+#!python
+
+import os
+import platform
+import subprocess
+
+AddOption('--prefix',
+          dest='prefix',
+          type='string',
+          nargs=1,
+          action='store',
+          metavar='DIR',
+          help='installation prefix')
+env = Environment(PREFIX = GetOption('prefix'))
+#prefix = GetOption('prefix')
+prefix  = os.environ.get('PREFIX')
+base = os.path.abspath(os.path.join(prefix,os.pardir))
+base = os.path.join(base,'work')
+sourcePath = os.path.join(base,'source')
+binPath = os.path.join(prefix,'bin')
+
+#if not platform.system()=='Linux':
+env.Replace(CC = os.path.join(binPath,'gcc'))
+
+env.Append(CCFLAGS = ['-static','-ffloat-store','-O3','-DVerbOpt',
+'-g', '-Wall', '-O0'])
+env.Append(LIBPATH = [os.path.join(sourcePath,'lib')])
+env.Append(CPPPATH = [os.path.join(sourcePath,'include')])
+env.Append(LIBS = ['m'])
+
+
+sources = [	'global.c','xval.c','cubist.c','sort.c','construct.c',
+           'predict.c','stats.c','discr.c','rules.c','contin.c',
+           'formrules.c','formtree.c','getdata.c','getnames.c',
+           'implicitatt.c','instance.c','modelfiles.c','prunetree.c',
+           'regress.c','trees.c','update.c','utility.c']
+Cubist = env.Program(target='cubist', source=sources)
+
+env.Install(binPath, Cubist)
+env.Alias('install', binPath)

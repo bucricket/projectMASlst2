@@ -5,8 +5,8 @@ import subprocess
 import os
 
 # set project base directory structure
-base = os.getcwd()
-    
+base = os.getcwd()   
+
 try:
     from setuptools import setup
     setup_kwargs = {'entry_points': {'console_scripts':['processlst=processlst.processlst:main']}}
@@ -25,10 +25,11 @@ condaPath = out[0][:-1]
 prefix  = os.environ.get('PREFIX')
 processDi = os.path.abspath(os.path.join(prefix,os.pardir))
 processDir = os.path.join(processDi,'work')
-srcDir = os.path.join(processDir,'source')
 libEnv = os.path.join(prefix,'lib')
 libDir = os.path.join(processDir,'source','lib')
 
+
+#====Creating SYMBOLIC L:INKS===========
 
 subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libtiff.a'), 
 "%s" % os.path.join(libDir,'libtiff.a')])
@@ -56,6 +57,14 @@ mkPath = os.path.join(processDir,'source','Landsat_DMS')
 os.chdir(mkPath)
 subprocess.call(["scons","-Q","--prefix=%s" % prefix,"install"])
 subprocess.call(["scons","-c"])
+os.chdir(base)
+
+print ("installing Cubist...")
+mkPath = os.path.join(processDir,'source','Cubist')
+os.chdir(mkPath)
+subprocess.call(["scons","-Q","--prefix=%s" % prefix,"install"])
+subprocess.call(["scons","-c"])
+os.chdir(base)
 
 #=============setup the python scripts============================
 
@@ -65,7 +74,8 @@ setup(
     description="prepare LST data for input to pyDisALEXI",
     author="Mitchell Schull",
     author_email="mitch.schull@noaa.gov",
-    url="https://github.com/bucricket/projectMASlst.git",
+    url="https://github.com/bucricket/projectMASlst2.git",
+#    packages= ['processlst'],
     py_modules=['processlst.processlst','processlst.utils',
                 'processlst.lndlst_dms','processlst.landsatTools',
                 'processlst.processData'],
