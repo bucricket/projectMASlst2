@@ -3,12 +3,12 @@ dependencies:
     - python 2.7*
     - numpy
     - pyproj
-    - gdal
     - lxml
     - h5py
     - pydap_urs
-    - hdf5
+    - hdf5=1.10.1
     - projectmascorrection
+    - gdal
     - pycurl
     - joblib >=0.10.3
     - python-wget
