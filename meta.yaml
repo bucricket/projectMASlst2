@@ -1,10 +1,10 @@
 package: 
   name: projectmaslst
-  version: 0.4.0
+  version: 0.4.1
 
 source:
   git_url: https://github.com/bucricket/projectMASlst2.git
-  git_tag: version_0.4.0
+#  git_tag: version_0.4.0
 
   
 #  patches:
@@ -27,11 +27,12 @@ build:
     
 requirements:
   build:
-    - python 2.7*
     - setuptools
-    - libgcc
-    - gcc
-    - scons 
+    - {{ compiler('c') }}
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
+    - scons
+  host:
+    - python
     - jpeg
 #    - geotiff ==1.4.1
     - geotiff
@@ -41,10 +42,9 @@ requirements:
     - libtiff 
     - xz
     - hdf4
-
     
   run:
-    - python 2.7*
+    - python
     - numpy
     - pyproj 
     #- gdal <=2.1.3
