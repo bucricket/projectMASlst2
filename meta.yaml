@@ -34,7 +34,6 @@ requirements:
   host:
     - python
     - jpeg
-#    - geotiff ==1.4.1
     - geotiff
     - zlib
     - hdfeos2 2.19*
@@ -42,21 +41,17 @@ requirements:
     - libtiff 
     - xz
     - hdf4
+    - lxml
     
   run:
     - python
     - numpy
-    - pyproj 
-    #- gdal <=2.1.3
     - gdal
-    - lxml
-    - h5py 
+    - h5py
     - pydap_urs
     - projectmascorrection
     - pycurl
     - joblib >=0.10.3
-    - wget
-    - pandas
     - projectmasgetlandsat
     - keyring  9.3.1
     - keyrings.alt 1.2
