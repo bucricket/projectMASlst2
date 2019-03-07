@@ -186,12 +186,12 @@ def get_lst(earth_user, earth_pass):
         # in_fn = sceneIDlist[i]
         landsat = Landsat(in_fn, username=earth_user,
                           password=earth_pass)
-        rttov = rttov(in_fn, username=earth_user,
+        rttov_obj = rttov(in_fn, username=earth_user,
                       password=earth_pass)
         tif_file = os.path.join(landsat_temp, '%s_lst.tiff' % landsat.sceneID)
         bin_file = os.path.join(landsat_temp, "lndsr." + landsat.sceneID + ".cband6.bin")
         if not os.path.exists(tif_file):
-            profile_dict = rttov.prepare_profile_data()
+            profile_dict = rttov_obj.prepare_profile_data()
             tiirs_rttov = run_rttov(profile_dict)
             landsat.processLandsatLST(tiirs_rttov, profile_dict)
 
