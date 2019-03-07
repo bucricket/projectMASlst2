@@ -19,13 +19,14 @@ import ftplib
 from .processData import Landsat, rttov
 from .utils import folders, untar, getFile
 from .lndlst_dms import getSharpenedLST
+import fnmatch
 
 base = os.getcwd()
 Folders = folders(base)
 landsat_SR = Folders['landsat_SR']
 landsat_LST = Folders['landsat_LST']
 landsat_temp = Folders['landsat_Temp']
-
+landsat_cache = os.path.join(base, "SATELLITE_DATA", "LANDSAT")
 
 def run_rttov(profile_dict):
     nlevels = profile_dict['P'].shape[1]
@@ -136,15 +137,53 @@ def run_rttov(profile_dict):
 
     return tirs_rttov
 
+def intersection(lst1, lst2):
+    lst3 = [value for value in lst1 if value in lst2]
+    return lst3
+
+def find_already_downloaded(cache_dir):
+    matches = []
+    for root, dirnames, filenames in os.walk(cache_dir):
+        for filename in fnmatch.filter(filenames, '*MTL*'):
+            matches.append(os.path.join(root, filename))
+    available = [os.path.basename(x) for x in matches]
+    available = [x[:-8] for x in available]
+    return available
+
+def find_not_processed(downloaded, cache_dir):
+    """finds the files that are downloaded but still need to process LAI data"""
+    # find sat
+    sat = downloaded[0].split("_")[0][-1]
+    # find scenes
+    scenes = [x.split("_")[2] for x in downloaded]
+    scenes = list(set(scenes))
+    available_list = []
+    for scene in scenes:
+        path_to_search = os.path.join(cache_dir, 'L%s/%s/LST/*_lstSharp.tif' % (sat, scene))
+        available = [os.path.basename(x) for x in
+                     glob.glob(path_to_search)]
+        available = [x[:-8] for x in available]
+        available_list = available_list + available
+    for x in available_list:
+        if x in downloaded:
+            downloaded.remove(x)
+    return downloaded
 
 def get_lst(earth_user, earth_pass):
-    sceneIDlist = glob.glob(os.path.join(landsat_temp, '*_MTL.txt'))
-
+    # sceneIDlist = glob.glob(os.path.join(landsat_temp, '*_MTL.txt'))
+    downloaded  = find_already_downloaded(landsat_cache)
+    productIDs = find_not_processed(downloaded, landsat_cache)
     # ------------------------------------------------------------------------
     # Set up the profile data
     # ------------------------------------------------------------------------
-    for i in xrange(len(sceneIDlist)):
-        in_fn = sceneIDlist[i]
+    # for i in xrange(len(sceneIDlist)):
+    for productID in productIDs:
+        sat_str = productID.split("_")[0][-1]
+        scene = productID.split("_")[2]
+        folder = os.path.join(landsat_cache, "L%s" % sat_str, scene)
+        meta_fn = productID + "_MTL.txt"
+        in_fn = os.path.join(folder, "RAW_DATA", meta_fn)
+        # in_fn = sceneIDlist[i]
         landsat = Landsat(in_fn, username=earth_user,
                           password=earth_pass)
         rttov = rttov(in_fn, username=earth_user,
@@ -163,9 +202,11 @@ def get_lst(earth_user, earth_pass):
         getSharpenedLST(in_fn)
 
         # =====move files to their respective directories and remove temp
-
+        landsat_LST = os.path.join(folder, 'LST')
+        if not os.path.exists(landsat_LST):
+            os.makedirs(landsat_LST)
         bin_fn = os.path.join(landsat_temp, '%s.sharpened_band6.bin' % landsat.sceneID)
-        tif_fn = os.path.join(landsat_LST, '%s_lstSharp.tiff' % landsat.sceneID)
+        tif_fn = os.path.join(landsat_LST, '%s_lstSharp.tif' % landsat.sceneID)
         subprocess.call(["gdal_translate", "-of", "GTiff", "%s" % bin_fn, "%s" % tif_fn])
 
 
