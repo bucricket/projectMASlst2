@@ -151,7 +151,7 @@ def find_already_downloaded(cache_dir):
     return available
 
 def find_not_processed(downloaded, cache_dir):
-    """finds the files that are downloaded but still need to process LAI data"""
+    """finds the files that are downloaded but still need to process LST data"""
     # find sat
     sat = downloaded[0].split("_")[0][-1]
     # find scenes

@@ -217,11 +217,12 @@ class Landsat:
         self.ASTERmosaicTemp = Folders['ASTERmosaicTemp']
         self.landsatDataBase = Folders['landsatDataBase']
         self.landsatEmissivityBase = Folders['landsatEmissivityBase']
+        self.filepath = filepath
         meta = landsat_metadata(filepath)
         self.productID = meta.LANDSAT_PRODUCT_ID
         self.sceneID = meta.LANDSAT_SCENE_ID
         self.scene = self.productID.split('_')[2]
-        self.ls = GeoTIFF(os.path.join(self.landsatSR, self.scene, '%s_sr_band1.tif' % self.productID))
+        self.ls = GeoTIFF(os.path.join(os.sep.join(filepath.split(os.sep)[:-1]), '%s_sr_band1.tif' % self.productID))
         self.proj4 = self.ls.proj4
         self.inProj4 = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
         self.ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT
@@ -294,7 +295,7 @@ class Landsat:
     def processLandsatLST(self, tirsRttov, merraDict):
 
         # Landsat brightness temperature
-        landsat = os.path.join(self.landsatTemp, "%s_bt_band10.tif" % self.productID)
+        landsat = os.path.join(os.sep.join(self.filepath.split(os.sep)[:-1]), "%s_bt_band10.tif" % self.productID)
         Lg = gdal.Open(landsat)
         BT = Lg.ReadAsArray() / 10.
         # =====get radiance from BT=========
