@@ -70,22 +70,16 @@ def run_rttov(profile_dict):
     s = pyrttov.__file__
     env_path = os.sep.join(s.split(os.sep)[:-6])
     rttov_path = os.path.join(env_path, 'share')
-    rttov_coeff_path = os.path.join(rttov_path, 'rttov')
-    rttov_emis_path = os.path.join(rttov_coeff_path, 'emis_data')
-    rttov_brdf_path = os.path.join(rttov_coeff_path, 'brdf_data')
+    rttov_coeff_path = os.path.join(os.getcwd(), 'rttov')
+    rttov_atlas_path = os.path.join(os.getcwd(), 'rttov')
+    rttov_emis_path = os.path.join(rttov_atlas_path, 'emis_data')
+    rttov_brdf_path = os.path.join(rttov_atlas_path, 'brdf_data')
     if not os.path.exists(rttov_brdf_path):
-        print("downloading atlases.....")
-        ftp = ftplib.FTP("ftp.star.nesdis.noaa.gov")
-        ftp.login("anonymous", "")
-
-        ftp.cwd('/pub/smcd/emb/mschull/')  # change directory to /pub/
-        getFile(ftp, 'rttov_atlas.tar')
-
-        ftp.quit()
-        untar('rttov_atlas.tar', rttov_path)
-
-        subprocess.check_output("chmod 755 %s%s*.H5" % (rttov_emis_path, os.sep), shell=True)
-        subprocess.check_output("chmod 755 %s%s*.H5" % (rttov_brdf_path, os.sep), shell=True)
+        os.makedirs(rttov_emis_path)
+        os.makedirs(rttov_brdf_path)
+        print("missing atlases")
+        print(" go to https://www.nwpsaf.eu/site/software/rttov/download/rttov-v11/#Emissivity_BRDF_atlas_data_for_RTTOV_v11")
+        print(" to download the HDF5 atlases into emis_data and brdf_data folders in the rttov folder")
     tirs_rttov.FileCoef = '{}/{}'.format(rttov_coeff_path, "rtcoef_landsat_8_tirs.dat")
     tirs_rttov.EmisAtlasPath = rttov_emis_path
     tirs_rttov.BrdfAtlasPath = rttov_brdf_path
