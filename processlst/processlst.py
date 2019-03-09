@@ -70,7 +70,7 @@ def run_rttov(profile_dict):
     s = pyrttov.__file__
     env_path = os.sep.join(s.split(os.sep)[:-6])
     rttov_path = os.path.join(env_path, 'share')
-    rttov_coeff_path = os.path.join(os.getcwd(), 'rttov')
+    rttov_coeff_path = os.path.join(rttov_path, 'rttov')
     rttov_atlas_path = os.path.join(os.getcwd(), 'rttov')
     rttov_emis_path = os.path.join(rttov_atlas_path, 'emis_data')
     rttov_brdf_path = os.path.join(rttov_atlas_path, 'brdf_data')
