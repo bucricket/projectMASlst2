@@ -28,10 +28,10 @@ build:
 requirements:
   build:
     - setuptools
-    - {{ compiler('c') }}
-    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
+    - gcc
+#    - {{ compiler('c') }}
+#    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
     - scons
-  host:
     - python
     - jpeg
     - geotiff==1.4.1
