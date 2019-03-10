@@ -19,7 +19,7 @@ sourcePath = os.path.join(base,'source')
 binPath = os.path.join(prefix,'bin')
 
 env.Replace(CC = os.environ.get('GCC'))
-env.Append(CCFLAGS = ['-static','-g','-O3','--no-fail-fast'])
+env.Append(CCFLAGS = ['-static','-g','-O3', '-no-pie'])
 
 env.Append(LIBPATH = [os.path.join(sourcePath,'lib')])
 env.Append(CPPPATH = [os.path.join(sourcePath,'include'),os.path.join(prefix,'include')])
