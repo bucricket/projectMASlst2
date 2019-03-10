@@ -232,7 +232,7 @@ def getSharpenedLST(productIDpath, sat):
         os.mkdir(lst_path)
     tifFile = os.path.join(lst_path, '%s_lstSharp.tiff' % sceneID)
     if not os.path.exists(tifFile):
-        ls = GeoTIFF(os.path.join('%s_sr_band1.tif' % os.path.join(os.sep.join(productIDpath.split(os.sep)[:-1]))))
+        ls = GeoTIFF(os.path.join('%s_sr_band1.tif' % productIDpath[:-8]))
         th_res = meta.GRID_CELL_SIZE_THERMAL
         if sceneID[2] == "5":
             th_res = 120
