@@ -10,7 +10,7 @@ import os
 import glob
 import subprocess
 import sys
-import pyrttov
+# import pyrttov  # put back in once its fixed
 import argparse
 import pycurl
 import keyring
