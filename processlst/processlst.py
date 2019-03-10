@@ -15,7 +15,6 @@ import argparse
 import pycurl
 import keyring
 import getpass
-import ftplib
 from .processData import Landsat, rttov
 from .utils import folders, untar, getFile
 from .lndlst_dms import getSharpenedLST
