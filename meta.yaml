@@ -29,6 +29,7 @@ requirements:
   build:
     - setuptools
     - python
+    - compilers
 #    - {{ compiler('c') }}
 #    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
     - scons

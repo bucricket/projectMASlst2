@@ -1,6 +1,7 @@
 #!python
 
 import os
+import compilers
 import platform
 import subprocess
 
@@ -18,7 +19,7 @@ base = os.path.join(base1, 'work')
 sourcePath = os.path.join(base, 'source')
 binPath = os.path.join(prefix, 'bin')
 
-env.Replace(CC=env['CC'])
+env.Replace(CC=compilers('c'))
 env.Append(CCFLAGS=['-static', '-g', '-O3'])
 
 env.Append(LIBPATH=[os.path.join(sourcePath, 'lib')])
