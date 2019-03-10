@@ -29,7 +29,6 @@ requirements:
   build:
     - setuptools
     - python
-    - compilers
 #    - {{ compiler('c') }}
 #    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
     - scons
@@ -57,7 +56,6 @@ requirements:
     - projectmasgetlandsat
     - keyring  9.3.1
     - keyrings.alt 1.2
-    - lxml
 
 
 test:
