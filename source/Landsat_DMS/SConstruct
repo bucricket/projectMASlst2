@@ -12,14 +12,13 @@ AddOption('--prefix',
           metavar='DIR',
           help='installation prefix')
 env = Environment(PREFIX=GetOption('prefix'))
-print(env())
 prefix = os.environ.get('PREFIX')
 base1 = os.path.abspath(os.path.join(prefix, os.pardir))
 base = os.path.join(base1, 'work')
 sourcePath = os.path.join(base, 'source')
 binPath = os.path.join(prefix, 'bin')
 
-env.Replace(CC=env['GCC'])
+env.Replace(CC=env['CC'])
 env.Append(CCFLAGS=['-static', '-g', '-O3'])
 
 env.Append(LIBPATH=[os.path.join(sourcePath, 'lib')])
