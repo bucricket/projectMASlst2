@@ -177,14 +177,12 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
     # ------------------------------------------------------------------------
     # Set up the profile data
     # ------------------------------------------------------------------------
-    # for i in xrange(len(sceneIDlist)):
     for productID in productIDs:
         sat_str = productID.split("_")[0][-1]
         scene = productID.split("_")[2]
         folder = os.path.join(landsat_cache, "L%s" % sat_str, scene)
         meta_fn = productID + "_MTL.txt"
         in_fn = os.path.join(folder, "RAW_DATA", meta_fn)
-        # in_fn = sceneIDlist[i]
         meta = landsat_metadata(in_fn)
         sceneID = meta.LANDSAT_SCENE_ID
         tif_file = os.path.join(landsat_temp, '%s_lst.tiff' % sceneID)
@@ -205,14 +203,14 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
 
         # =====sharpen the corrected LST==========================================
 
-        getSharpenedLST(in_fn)
+        getSharpenedLST(in_fn, int(sat_str))
 
         # =====move files to their respective directories and remove temp
         landsat_LST = os.path.join(folder, 'LST')
         if not os.path.exists(landsat_LST):
             os.makedirs(landsat_LST)
-        bin_fn = os.path.join(landsat_temp, '%s.sharpened_band6.bin' % landsat.sceneID)
-        tif_fn = os.path.join(landsat_LST, '%s_lstSharp.tif' % landsat.sceneID)
+        bin_fn = os.path.join(landsat_temp, '%s.sharpened_band6.bin' % sceneID)
+        tif_fn = os.path.join(landsat_LST, '%s_lstSharp.tif' % sceneID)
         subprocess.call(["gdal_translate", "-of", "GTiff", "%s" % bin_fn, "%s" % tif_fn])
 
 
