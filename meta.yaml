@@ -49,7 +49,7 @@ requirements:
     - gdal
     - h5py
     - pydap_urs
-    - projectmascorrection==0.4.0
+#    - projectmascorrection==0.4.0
     - pycurl
     - joblib >=0.10.3
     - projectmasgetlandsat
