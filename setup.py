@@ -3,6 +3,7 @@
 from __future__ import print_function
 import subprocess
 import os
+import shutil
 
 # set project base directory structure
 base = os.getcwd()   
@@ -30,27 +31,67 @@ libDir = os.path.join(processDir,'source','lib')
 
 
 #====Creating SYMBOLIC L:INKS===========
+src_lib = os.path.join(libEnv,'libtiff.a')
+dest_lib = os.path.join(libDir,'libtiff.a')
+shutil.copyfile(src_lib, dest_lib)
 
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libtiff.a'), 
-"%s" % os.path.join(libDir,'libtiff.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'liblzma.a'), 
-"%s" % os.path.join(libDir,'liblzma.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libjpeg.a'), 
-"%s" % os.path.join(libDir,'libjpeg.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libgeotiff.a'), 
-"%s" % os.path.join(libDir,'libgeotiff.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libsz.a'), 
-"%s" % os.path.join(libDir,'libsz.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libGctp.a'), 
-"%s" % os.path.join(libDir,'libGctp.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libdf.a'), 
-"%s" % os.path.join(libDir,'libdf.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libz.a'), 
-"%s" % os.path.join(libDir,'libz.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libmfhdf.a'), 
-"%s" % os.path.join(libDir,'libmfhdf.a')])
-subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libhdfeos.a'), 
-"%s" % os.path.join(libDir,'libhdfeos.a')])
+src_lib = os.path.join(libEnv,'liblzma.a')
+dest_lib = os.path.join(libDir,'liblzma.a')
+shutil.copyfile(src_lib, dest_lib)
+
+src_lib = os.path.join(libEnv,'libjpeg.a')
+dest_lib = os.path.join(libDir,'libjpeg.a')
+shutil.copyfile(src_lib, dest_lib)
+
+src_lib = os.path.join(libEnv,'libgeotiff.a')
+dest_lib = os.path.join(libDir,'libgeotiff.a')
+shutil.copyfile(src_lib, dest_lib)
+
+src_lib = os.path.join(libEnv,'libsz.a')
+dest_lib = os.path.join(libDir,'libsz.a')
+shutil.copyfile(src_lib, dest_lib)
+
+src_lib = os.path.join(libEnv,'libGctp.a')
+dest_lib = os.path.join(libDir,'libGctp.a')
+shutil.copyfile(src_lib, dest_lib)
+
+src_lib = os.path.join(libEnv,'libdf.a')
+dest_lib = os.path.join(libDir,'libdf.a')
+shutil.copyfile(src_lib, dest_lib)
+
+src_lib = os.path.join(libEnv,'libz.a')
+dest_lib = os.path.join(libDir,'libz.a')
+shutil.copyfile(src_lib, dest_lib)
+
+src_lib = os.path.join(libEnv,'libmfhdf.a')
+dest_lib = os.path.join(libDir,'libmfhdf.a')
+shutil.copyfile(src_lib, dest_lib)
+
+src_lib = os.path.join(libEnv,'libhdfeos.a')
+dest_lib = os.path.join(libDir,'libhdfeos.a')
+shutil.copyfile(src_lib, dest_lib)
+
+
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libtiff.a'),
+# "%s" % os.path.join(libDir,'libtiff.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'liblzma.a'),
+# "%s" % os.path.join(libDir,'liblzma.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libjpeg.a'),
+# "%s" % os.path.join(libDir,'libjpeg.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libgeotiff.a'),
+# "%s" % os.path.join(libDir,'libgeotiff.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libsz.a'),
+# "%s" % os.path.join(libDir,'libsz.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libGctp.a'),
+# "%s" % os.path.join(libDir,'libGctp.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libdf.a'),
+# "%s" % os.path.join(libDir,'libdf.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libz.a'),
+# "%s" % os.path.join(libDir,'libz.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libmfhdf.a'),
+# "%s" % os.path.join(libDir,'libmfhdf.a')])
+# subprocess.call(["ln","-s", "%s" % os.path.join(libEnv,'libhdfeos.a'),
+# "%s" % os.path.join(libDir,'libhdfeos.a')])
 
 print ("installing Landsat_DMS...")
 mkPath = os.path.join(processDir,'source','Landsat_DMS')
