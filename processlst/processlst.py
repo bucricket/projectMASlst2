@@ -20,6 +20,7 @@ from .processData import Landsat, rttov
 from .utils import folders, untar, getFile
 from .lndlst_dms import getSharpenedLST
 import fnmatch
+from .landsatTools import landsat_metadata
 
 base = os.getcwd()
 Folders = folders(base)
@@ -27,6 +28,7 @@ landsat_SR = Folders['landsat_SR']
 landsat_LST = Folders['landsat_LST']
 landsat_temp = Folders['landsat_Temp']
 landsat_cache = os.path.join(base, "SATELLITE_DATA", "LANDSAT")
+
 
 def run_rttov(profile_dict):
     nlevels = profile_dict['P'].shape[1]
@@ -78,7 +80,8 @@ def run_rttov(profile_dict):
         os.makedirs(rttov_emis_path)
         os.makedirs(rttov_brdf_path)
         print("missing atlases")
-        print(" go to https://www.nwpsaf.eu/site/software/rttov/download/rttov-v11/#Emissivity_BRDF_atlas_data_for_RTTOV_v11")
+        print(
+            " go to https://www.nwpsaf.eu/site/software/rttov/download/rttov-v11/#Emissivity_BRDF_atlas_data_for_RTTOV_v11")
         print(" to download the HDF5 atlases into emis_data and brdf_data folders in the rttov folder")
     tirs_rttov.FileCoef = '{}/{}'.format(rttov_coeff_path, "rtcoef_landsat_8_tirs.dat")
     tirs_rttov.EmisAtlasPath = rttov_emis_path
@@ -131,9 +134,11 @@ def run_rttov(profile_dict):
 
     return tirs_rttov
 
+
 def intersection(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]
     return lst3
+
 
 def find_already_downloaded(cache_dir):
     matches = []
@@ -143,6 +148,7 @@ def find_already_downloaded(cache_dir):
     available = [os.path.basename(x) for x in matches]
     available = [x[:-8] for x in available]
     return available
+
 
 def find_not_processed(downloaded, cache_dir):
     """finds the files that are downloaded but still need to process LST data"""
@@ -163,9 +169,10 @@ def find_not_processed(downloaded, cache_dir):
             downloaded.remove(x)
     return downloaded
 
-def get_lst(earth_user, earth_pass):
+
+def get_lst(earth_user, earth_pass, atmos_corr=True):
     # sceneIDlist = glob.glob(os.path.join(landsat_temp, '*_MTL.txt'))
-    downloaded  = find_already_downloaded(landsat_cache)
+    downloaded = find_already_downloaded(landsat_cache)
     productIDs = find_not_processed(downloaded, landsat_cache)
     # ------------------------------------------------------------------------
     # Set up the profile data
@@ -178,16 +185,21 @@ def get_lst(earth_user, earth_pass):
         meta_fn = productID + "_MTL.txt"
         in_fn = os.path.join(folder, "RAW_DATA", meta_fn)
         # in_fn = sceneIDlist[i]
-        landsat = Landsat(in_fn, username=earth_user,
-                          password=earth_pass)
-        rttov_obj = rttov(in_fn, username=earth_user,
-                      password=earth_pass)
-        tif_file = os.path.join(landsat_temp, '%s_lst.tiff' % landsat.sceneID)
-        bin_file = os.path.join(landsat_temp, "lndsr." + landsat.sceneID + ".cband6.bin")
-        if not os.path.exists(tif_file):
-            profile_dict = rttov_obj.prepare_profile_data()
-            tiirs_rttov = run_rttov(profile_dict)
-            landsat.processLandsatLST(tiirs_rttov, profile_dict)
+        meta = landsat_metadata(meta_fn)
+        sceneID = meta.LANDSAT_SCENE_ID
+        tif_file = os.path.join(landsat_temp, '%s_lst.tiff' % sceneID)
+        bin_file = os.path.join(landsat_temp, "lndsr." + sceneID + ".cband6.bin")
+        if atmos_corr is True:
+            landsat = Landsat(in_fn, username=earth_user,
+                              password=earth_pass)
+            rttov_obj = rttov(in_fn, username=earth_user,
+                              password=earth_pass)
+            if not os.path.exists(tif_file):
+                profile_dict = rttov_obj.prepare_profile_data()
+                tiirs_rttov = run_rttov(profile_dict)
+                landsat.processLandsatLST(tiirs_rttov, profile_dict)
+        else:
+            tif_file = os.path.join(folder, "RAW_DATA", productID + "_bt_band10.tif")
 
         subprocess.call(["gdal_translate", "-of", "ENVI", "%s" % tif_file, "%s" % bin_file])
 
@@ -208,9 +220,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("earth_user", type=str, help="earth Login Username")
     parser.add_argument("earth_pass", type=str, help="earth Login Password")
+    parser.add_argument('-a', '--atmos_corr', nargs='?', type=str, default='y',
+                        help=' flag to indicate to use atmospheric correction.')
     args = parser.parse_args()
     earth_user = args.earth_user
     earth_pass = args.earth_pass
+    atmos_corr = args.atmos_corr
+
+    if atmos_corr == 'y' or atmos_corr == 'Y':
+        atmos_corr = True
+    else:
+        atmos_corr = False
     # =====earthData credentials===============
     if earth_user is None:
         earth_user = str(getpass.getpass(prompt="earth login username:"))
@@ -220,7 +240,7 @@ def main():
         else:
             earth_pass = str(keyring.get_password("nasa", earth_user))
 
-    get_lst(earth_user, earth_pass)
+    get_lst(earth_user, earth_pass, atmos_corr)
 
 
 if __name__ == "__main__":
