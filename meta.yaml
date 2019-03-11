@@ -35,7 +35,7 @@ requirements:
   host:
     - python
     - jpeg
-    - geotiff
+    - geotiff<1.4.3
     - zlib
     - hdfeos2 2.19*
     - szip
