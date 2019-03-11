@@ -43,6 +43,7 @@ requirements:
     - xz
     - hdf4
     - lxml
+    - zstd
     
   run:
     - python
