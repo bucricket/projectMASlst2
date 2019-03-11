@@ -219,7 +219,7 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
         subprocess.call(["gdal_translate", "-of", "ENVI", "%s" % tif_file, "%s" % bin_file])
 
         # =====sharpen the corrected LST==========================================
-        if os.path.exists(in_fn:)
+        if os.path.exists(in_fn)
             getSharpenedLST(in_fn, int(sat_str))
 
         # =====move files to their respective directories and remove temp
