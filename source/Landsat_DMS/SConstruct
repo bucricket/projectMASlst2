@@ -19,10 +19,10 @@ sourcePath = os.path.join(base, 'source')
 binPath = os.path.join(prefix, 'bin')
 
 env.Replace(CC=os.environ.get('GCC'))
-env.Append(CCFLAGS=[ '-g', '-O3'])
+env.Append(CCFLAGS=['-static', '-g', '-O3'])
 env.Append(LDFLAGS=['-lm'])
-env.Append(LIBPATH=[os.path.join(sourcePath, 'lib')])
-env.Append(CPPPATH=[os.path.join(sourcePath, 'include')])
+env.Append(LIBPATH=[os.path.join(prefix, 'lib')])
+env.Append(CPPPATH=[os.path.join(prefix, 'include')])
 env.Append(LIBS=['geotiff', 'tiff', 'z', 'jpeg', 'm', 'lzma'])
 
 combineModels = env.Program(target='combine_models', source=['utility.c', 'sensor.c', 'combine_models.c'])
