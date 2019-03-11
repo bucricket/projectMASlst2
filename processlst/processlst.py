@@ -19,7 +19,9 @@ from .processData import Landsat, rttov
 from .utils import folders, untar, getFile
 from .lndlst_dms import getSharpenedLST
 import fnmatch
-from .landsatTools import landsat_metadata
+from .landsatTools import landsat_metadata, GeoTIFF
+from osgeo import gdal
+import numpy as np
 
 base = os.getcwd()
 Folders = folders(base)
@@ -196,7 +198,23 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
                 tiirs_rttov = run_rttov(profile_dict)
                 landsat.processLandsatLST(tiirs_rttov, profile_dict)
         else:
+            meta = landsat_metadata(in_fn)
+            productID = meta.LANDSAT_PRODUCT_ID
+            sceneID = meta.LANDSAT_SCENE_ID
+            Kappa1 = meta.K1_CONSTANT_BAND_10
+            Kappa2 = meta.K2_CONSTANT_BAND_10
+            scene = productID.split('_')[2]
             tif_file = os.path.join(folder, "RAW_DATA", productID + "_bt_band10.tif")
+            g = gdal.Open(tif_file)
+            surfRad = g.ReadAsArray()
+            ls = GeoTIFF(
+                os.path.join(folder, "RAW_DATA", '%s_sr_band1.tif' % productID))
+            LST = np.array(Kappa2 * (1 / np.log(Kappa1 / surfRad)), dtype='float32')
+
+            # write LST to a geoTiff
+
+            ls.clone(tif_file, LST)
+
 
         subprocess.call(["gdal_translate", "-of", "ENVI", "%s" % tif_file, "%s" % bin_file])
 
