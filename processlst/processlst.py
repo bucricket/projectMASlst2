@@ -219,16 +219,17 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
         subprocess.call(["gdal_translate", "-of", "ENVI", "%s" % tif_file, "%s" % bin_file])
 
         # =====sharpen the corrected LST==========================================
+        print(in_fn)
         if os.path.exists(in_fn):
             getSharpenedLST(in_fn, int(sat_str))
 
-        # =====move files to their respective directories and remove temp
-        landsat_LST = os.path.join(folder, 'LST')
-        if not os.path.exists(landsat_LST):
-            os.makedirs(landsat_LST)
-        bin_fn = os.path.join(landsat_temp, '%s.sharpened_band6.bin' % sceneID)
-        tif_fn = os.path.join(landsat_LST, '%s_lstSharp.tif' % sceneID)
-        subprocess.call(["gdal_translate", "-of", "GTiff", "%s" % bin_fn, "%s" % tif_fn])
+            # =====move files to their respective directories and remove temp
+            landsat_LST = os.path.join(folder, 'LST')
+            if not os.path.exists(landsat_LST):
+                os.makedirs(landsat_LST)
+            bin_fn = os.path.join(landsat_temp, '%s.sharpened_band6.bin' % sceneID)
+            tif_fn = os.path.join(landsat_LST, '%s_lstSharp.tif' % sceneID)
+            subprocess.call(["gdal_translate", "-of", "GTiff", "%s" % bin_fn, "%s" % tif_fn])
 
 
 def main():
