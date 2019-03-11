@@ -184,6 +184,7 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
         folder = os.path.join(landsat_cache, "L%s" % sat_str, scene)
         meta_fn = productID + "_MTL.txt"
         in_fn = os.path.join(folder, "RAW_DATA", meta_fn)
+        print(in_fn)
         meta = landsat_metadata(in_fn)
         sceneID = meta.LANDSAT_SCENE_ID
         tif_file = os.path.join(landsat_temp, '%s_lst.tiff' % sceneID)
@@ -198,7 +199,7 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
                 tiirs_rttov = run_rttov(profile_dict)
                 landsat.processLandsatLST(tiirs_rttov, profile_dict)
         else:
-            meta = landsat_metadata(in_fn)
+            # meta = landsat_metadata(in_fn)
             productID = meta.LANDSAT_PRODUCT_ID
             sceneID = meta.LANDSAT_SCENE_ID
             Kappa1 = meta.K1_CONSTANT_BAND_10
