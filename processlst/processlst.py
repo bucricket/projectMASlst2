@@ -187,7 +187,7 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
         print(in_fn)
         meta = landsat_metadata(in_fn)
         sceneID = meta.LANDSAT_SCENE_ID
-        tif_file = os.path.join(landsat_temp, '%s_lst.tiff' % sceneID)
+        tif_file = os.path.join(landsat_temp, '%s_lst.tif' % sceneID)
         bin_file = os.path.join(landsat_temp, "lndsr." + sceneID + ".cband6.bin")
         if atmos_corr is True:
             landsat = Landsat(in_fn, username=earth_user,
@@ -202,22 +202,19 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
             # meta = landsat_metadata(in_fn)
             productID = meta.LANDSAT_PRODUCT_ID
             sceneID = meta.LANDSAT_SCENE_ID
-            Kappa1 = meta.K1_CONSTANT_BAND_10
-            Kappa2 = meta.K2_CONSTANT_BAND_10
-            scene = productID.split('_')[2]
-            tif_file = os.path.join(folder, "RAW_DATA", productID + "_bt_band10.tif")
-            g = gdal.Open(tif_file)
-            surfRad = g.ReadAsArray()
+            in_tif_file = os.path.join(folder, "RAW_DATA", productID + "_bt_band10.tif")
+            g = gdal.Open(in_tif_file)
+            LST = g.ReadAsArray() / 10.
             ls = GeoTIFF(
                 os.path.join(folder, "RAW_DATA", '%s_sr_band1.tif' % productID))
-            LST = np.array(Kappa2 * (1 / np.log(Kappa1 / surfRad)), dtype='float32')
 
             # write LST to a geoTiff
 
             ls.clone(tif_file, LST)
 
 
-        subprocess.call(["gdal_translate", "-of", "ENVI", "%s" % tif_file, "%s" % bin_file])
+        # subprocess.call(["gdal_translate", "-of", "ENVI", "%s" % tif_file, "%s" % bin_file])
+        subprocess.call("gdal_translate -of ENVI %s %s" % (tif_file, "%s" % bin_file), shell=True)
 
         # =====sharpen the corrected LST==========================================
         print(in_fn)
