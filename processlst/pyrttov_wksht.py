@@ -516,22 +516,22 @@ class GeoTIFF(object):
 
 
 class rttov:
-    def __init__(self, filepath, username, password):
-        base = os.getcwd()
-        folder_paths = folders(base)
+    def __init__(self, username, password, ulLat, ulLon, lrLat, lrLon, sza, saa, d):
+        # base = os.getcwd()
+        # folder_paths = folders(base)
         self.earthLoginUser = username
         self.earthLoginPass = password
-        self.landsatSR = folder_paths['landsat_SR']
-        meta = landsat_metadata(filepath)
-        self.productID = meta.LANDSAT_PRODUCT_ID
-        self.scene = self.productID.split('_')[2]
-        self.ulLat = meta.CORNER_UL_LAT_PRODUCT
-        self.ulLon = meta.CORNER_UL_LON_PRODUCT
-        self.lrLat = meta.CORNER_LR_LAT_PRODUCT
-        self.lrLon = meta.CORNER_LR_LON_PRODUCT
-        self.solZen = meta.SUN_ELEVATION
-        self.solAzi = meta.SUN_AZIMUTH
-        d = meta.DATETIME_OBJ
+        # self.landsatSR = folder_paths['landsat_SR']
+        # meta = landsat_metadata(filepath)
+        # self.productID = meta.LANDSAT_PRODUCT_ID
+        # self.scene = self.productID.split('_')[2]
+        self.ulLat = ulLat
+        self.ulLon = ulLon
+        self.lrLat = lrLat
+        self.lrLon = lrLon
+        self.solZen = sza
+        self.solAzi = saa
+        # d = meta.DATETIME_OBJ
         self.year = d.year
         self.month = d.month
         self.day = d.day
@@ -884,7 +884,7 @@ class Landsat:
         print('done processing LST')
 
 
-def run_rttov(profile_dict):
+def run_rttov(profile_dict, rtt):
     nlevels = profile_dict['P'].shape[1]
     nprofiles = profile_dict['P'].shape[0]
     my_profiles = pyrttov.Profiles(nprofiles, nlevels)
@@ -920,12 +920,12 @@ def run_rttov(profile_dict):
     - enable the store_trans wrapper option for MHS to provide access to
       RTTOV transmission structure"""
 
-    tirs_rttov = pyrttov.Rttov()
+    sensor_rttov = pyrttov.Rttov()
     #    nchan_tirs = 1
     s = pyrttov.__file__
     env_path = os.sep.join(s.split(os.sep)[:-6])
-    rttov_path = os.path.join(env_path, 'share')
-    rttov_coeff_path = os.path.join(rttov_path, 'rttov')
+    # rttov_path = os.path.join(env_path, 'share')
+    rttov_coeff_path = os.path.join(os.getcwd(), 'rttov')
     rttov_atlas_path = os.path.join(os.getcwd(), 'rttov')
     rttov_emis_path = os.path.join(rttov_atlas_path, 'emis_data')
     rttov_brdf_path = os.path.join(rttov_atlas_path, 'brdf_data')
@@ -936,25 +936,27 @@ def run_rttov(profile_dict):
         print(
             " go to https://www.nwpsaf.eu/site/software/rttov/download/rttov-v11/#Emissivity_BRDF_atlas_data_for_RTTOV_v11")
         print(" to download the HDF5 atlases into emis_data and brdf_data folders in the rttov folder")
-    tirs_rttov.FileCoef = '{}/{}'.format(rttov_coeff_path, "rtcoef_landsat_8_tirs.dat")
-    tirs_rttov.EmisAtlasPath = rttov_emis_path
-    tirs_rttov.BrdfAtlasPath = rttov_brdf_path
+    #  KARIM CHANGE THIS COEFFICIENT FOR VIIRS================================
+    sensor_rttov.FileCoef = '{}/{}'.format(rttov_coeff_path, "rtcoef_landsat_8_tirs.dat")
+    # ==============================================================================
+    sensor_rttov.EmisAtlasPath = rttov_emis_path
+    sensor_rttov.BrdfAtlasPath = rttov_brdf_path
 
-    tirs_rttov.Options.AddInterp = True
-    tirs_rttov.Options.StoreTrans = True
-    tirs_rttov.Options.StoreRad2 = True
-    tirs_rttov.Options.VerboseWrapper = True
+    sensor_rttov.Options.AddInterp = True
+    sensor_rttov.Options.StoreTrans = True
+    sensor_rttov.Options.StoreRad2 = True
+    sensor_rttov.Options.VerboseWrapper = True
 
     # Load the instruments:
 
     try:
-        tirs_rttov.loadInst()
+        sensor_rttov.loadInst()
     except pyrttov.RttovError as e:
         sys.stderr.write("Error loading instrument(s): {!s}".format(e))
         sys.exit(1)
 
     # Associate the profiles with each Rttov instance
-    tirs_rttov.Profiles = my_profiles
+    sensor_rttov.Profiles = my_profiles
     # ------------------------------------------------------------------------
     # Load the emissivity and BRDF atlases
     # ------------------------------------------------------------------------
@@ -967,7 +969,7 @@ def run_rttov(profile_dict):
     - for the BRDF atlas, since SEVIRI is the only VIS/NIR instrument we can
       use the single-instrument initialisation"""
 
-    tirs_rttov.irEmisAtlasSetup(month)
+    sensor_rttov.irEmisAtlasSetup(month)
     # ------------------------------------------------------------------------
     # Call RTTOV
     # ------------------------------------------------------------------------
@@ -981,33 +983,39 @@ def run_rttov(profile_dict):
     simulated"""
 
     try:
-        tirs_rttov.runDirect()
+        sensor_rttov.runDirect()
     except pyrttov.RttovError as e:
         sys.stderr.write("Error running RTTOV direct model: {!s}".format(e))
         sys.exit(1)
 
-    return tirs_rttov
+    return sensor_rttov
 
 
-def get_lst(earth_user, earth_pass, productID):
+def get_lst(earth_user, earth_pass, meta_fn):
     # ------------------------------------------------------------------------
     # Set up the profile data
     # ------------------------------------------------------------------------
+    landsat_temp = os.path.join(os.getcwd(), "temp")
+    if not os.path.exists(landsat_temp):
+        os.makedirs(landsat_temp)
 
-    sat_str = productID.split("_")[0][-1]
-    scene = productID.split("_")[2]
-    folder = os.path.join(landsat_cache, "L%s" % sat_str, scene)
-    meta_fn = productID + "_MTL.txt"
-    in_fn = os.path.join(folder, "RAW_DATA", meta_fn)
-    print(in_fn)
-    meta = landsat_metadata(in_fn)
+    meta = landsat_metadata(meta_fn)
     sceneID = meta.LANDSAT_SCENE_ID
+    ulLat = meta.CORNER_UL_LAT_PRODUCT
+    ulLon = meta.CORNER_UL_LON_PRODUCT
+    lrLat = meta.CORNER_LR_LAT_PRODUCT
+    lrLon = meta.CORNER_LR_LON_PRODUCT
+    landsatDate = meta.DATE_ACQUIRED
+    landsatTime = meta.SCENE_CENTER_TIME[:-2]
+    d = datetime.strptime('%s%s' % (landsatDate, landsatTime), '%Y-%m-%d%H:%M:%S.%f')
+    sza = meta.SUN_ELEVATION
+    saa = meta.SUN_AZIMUTH
     tif_file = os.path.join(landsat_temp, '%s_lst.tif' % sceneID)
 
-    landsat = Landsat(in_fn, username=earth_user,
+    landsat = Landsat(meta_fn, username=earth_user,
                       password=earth_pass)
-    rttov_obj = rttov(in_fn, username=earth_user,
-                      password=earth_pass)
+
+    rttov_obj = rttov(earth_user, earth_pass, ulLat, ulLon, lrLat, lrLon, sza, saa, d)
     if not os.path.exists(tif_file):
         profile_dict = rttov_obj.prepare_profile_data()
         tiirs_rttov = run_rttov(profile_dict)
@@ -1015,21 +1023,28 @@ def get_lst(earth_user, earth_pass, productID):
 
 
 def main():
-
     # KARIM============
     earth_user = 'user'
     earth_pass = 'pass'
     # KARIM=================
     # =====earthData credentials===============
-    if earth_user is None:
-        earth_user = str(getpass.getpass(prompt="earth login username:"))
-        if keyring.get_password("nasa", earth_user) is None:
-            earth_pass = str(getpass.getpass(prompt="earth login password:"))
-            keyring.set_password("nasa", earth_user, earth_pass)
-        else:
-            earth_pass = str(keyring.get_password("nasa", earth_user))
+    # unnecessary for now it simply saves your password
+    # if earth_user is None:
+    #     earth_user = str(getpass.getpass(prompt="earth login username:"))
+    #     if keyring.get_password("nasa", earth_user) is None:
+    #         earth_pass = str(getpass.getpass(prompt="earth login password:"))
+    #         keyring.set_password("nasa", earth_user, earth_pass)
+    #     else:
+    #         earth_pass = str(keyring.get_password("nasa", earth_user))
 
-    get_lst(earth_user, earth_pass)
+    """ You will need:
+    1. Landsat MTL path
+    2. put BRDF and Emmisivity atlases in ./rttov/brdf_data/ and ./rttov/emis_data/
+    3. put sensor specific coefficients in ./rttov/ (i.e. rtcoef_landsat_8_tirs.dat)
+    4. you will need your NASA Earth Data Login"""
+
+    meta_fn = "xxxxx_MTL.txt"
+    get_lst(earth_user, earth_pass, meta_fn)
 
 
 if __name__ == "__main__":

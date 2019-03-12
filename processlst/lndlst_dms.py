@@ -49,9 +49,8 @@ def perpareDMSinp(productIDpath, s_row, s_col, locglob, ext):
             dat_fn = os.path.join(landsat_temp, "%s_cfmask.%s.dat" % (productID, out_dats[count]))
         count += 1
         if not os.path.exists(dat_fn):
-            outds = gdal.Open(tif_fn)
-            outds = gdal.Translate(dat_fn, outds, options=gdal.TranslateOptions(format="ENVI"))
-            outds = None
+            subprocess.call(["gdal_translate", "-q", "-of", "ENVI", "%s" % tif_fn, "%s" % dat_fn])
+            os.rename("%s.hdr" % dat_fn[:-4], "%s.dat.hdr" % dat_fn[:-4])
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
     ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT - (sw_res * 0.5)
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT + (sw_res * 0.5)
@@ -135,9 +134,8 @@ def finalDMSinp(productIDpath, ext):
             dat_fn = os.path.join(landsat_temp, "%s_cfmask.%s.dat" % (productID, out_dats[count]))
         count += 1
         if not os.path.exists(dat_fn):
-            outds = gdal.Open(tif_fn)
-            outds = gdal.Translate(dat_fn, outds, options=gdal.TranslateOptions(format="ENVI"))
-            outds = None
+            subprocess.call(["gdal_translate", "-q", "-of", "ENVI", "%s" % tif_fn, "%s" % dat_fn])
+            os.rename("%s.hdr" % dat_fn[:-4], "%s.dat.hdr" % dat_fn[:-4])
     sw_res = meta.GRID_CELL_SIZE_REFLECTIVE
     ulx = meta.CORNER_UL_PROJECTION_X_PRODUCT - (sw_res * 0.5)
     uly = meta.CORNER_UL_PROJECTION_Y_PRODUCT + (sw_res * 0.5)
