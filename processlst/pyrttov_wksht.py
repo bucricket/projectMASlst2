@@ -1,4 +1,3 @@
-import argparse
 import base64
 import getpass
 import inspect
@@ -1016,20 +1015,10 @@ def get_lst(earth_user, earth_pass, productID):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("earth_user", type=str, help="earth Login Username")
-    parser.add_argument("earth_pass", type=str, help="earth Login Password")
-    parser.add_argument('-a', '--atmos_corr', nargs='?', type=str, default='y',
-                        help=' flag to indicate to use atmospheric correction.')
-    args = parser.parse_args()
-    earth_user = args.earth_user
-    earth_pass = args.earth_pass
-    atmos_corr = args.atmos_corr
 
-    if atmos_corr == 'y' or atmos_corr == 'Y':
-        atmos_corr = True
-    else:
-        atmos_corr = False
+    earth_user = 'user'
+    earth_pass =  'pass'
+
     # =====earthData credentials===============
     if earth_user is None:
         earth_user = str(getpass.getpass(prompt="earth login username:"))

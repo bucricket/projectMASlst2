@@ -127,6 +127,7 @@ def finalDMSinp(productIDpath, ext):
     count = 0
     for fn in files2convert:
         tif_fn = productIDpath[:-8] + "_%s.tif" % (fn)
+        print(tif_fn)
         dat_fn = os.path.join(landsat_temp, "%s_%s.%s.dat" % (productID, fn, out_dats[count]))
 
         if fn == 'Mask':
