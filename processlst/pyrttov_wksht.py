@@ -1016,9 +1016,10 @@ def get_lst(earth_user, earth_pass, productID):
 
 def main():
 
+    # KARIM============
     earth_user = 'user'
-    earth_pass =  'pass'
-
+    earth_pass = 'pass'
+    # KARIM=================
     # =====earthData credentials===============
     if earth_user is None:
         earth_user = str(getpass.getpass(prompt="earth login username:"))

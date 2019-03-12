@@ -104,7 +104,7 @@ def folders(base):
     landsat_SR = os.path.join(landsatDataBase,'SR')
     if not os.path.exists(landsat_SR):
         os.makedirs(landsat_SR)
-    landsat_Temp = os.path.join(landsat_SR,'temp')
+    landsat_Temp = os.path.join(base,'temp')
     if not os.path.exists(landsat_Temp):
         os.makedirs(landsat_Temp)
     landsat_LST = os.path.join(landsatDataBase,'LST')
