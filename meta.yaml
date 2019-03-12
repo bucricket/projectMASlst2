@@ -57,6 +57,7 @@ requirements:
     - projectmasgetlandsat
     - keyring  9.3.1
     - keyrings.alt 1.2
+    - lxml
 
 
 test:
