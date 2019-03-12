@@ -131,7 +131,7 @@ def finalDMSinp(productIDpath, ext):
         dat_fn = os.path.join(landsat_temp, "%s_%s.%s.dat" % (productID, fn, out_dats[count]))
 
         if fn == 'Mask':
-            tif_fn = os.path.join(maskPath, "%s_%s.tiff" % (sceneID, fn))
+            tif_fn = os.path.join(maskPath, "%s_%s.tif" % (sceneID, fn))
             dat_fn = os.path.join(landsat_temp, "%s_cfmask.%s.dat" % (productID, out_dats[count]))
         count += 1
         if not os.path.exists(dat_fn):
