@@ -182,6 +182,7 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
         sat_str = productID.split("_")[0][-1]
         scene = productID.split("_")[2]
         folder = os.path.join(landsat_cache, "L%s" % sat_str, scene)
+        print(folder)
         meta_fn = productID + "_MTL.txt"
         in_fn = os.path.join(folder, "RAW_DATA", meta_fn)
         print(in_fn)
