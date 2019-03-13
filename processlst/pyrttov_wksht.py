@@ -921,7 +921,7 @@ def run_rttov(profile_dict):
       RTTOV transmission structure"""
 
     sensor_rttov = pyrttov.Rttov()
-    #    nchan_tirs = 1
+    nchan_tirs = 1
     s = pyrttov.__file__
     env_path = os.sep.join(s.split(os.sep)[:-6])
     # rttov_path = os.path.join(env_path, 'share')
@@ -939,8 +939,8 @@ def run_rttov(profile_dict):
     #  KARIM CHANGE THIS COEFFICIENT FOR VIIRS================================
     sensor_rttov.FileCoef = '{}/{}'.format(rttov_coeff_path, "rtcoef_landsat_8_tirs.dat")
     # ==============================================================================
-    sensor_rttov.EmisAtlasPath = rttov_emis_path
-    sensor_rttov.BrdfAtlasPath = rttov_brdf_path
+    # sensor_rttov.EmisAtlasPath = rttov_emis_path
+    # sensor_rttov.BrdfAtlasPath = rttov_brdf_path
 
     sensor_rttov.Options.AddInterp = True
     sensor_rttov.Options.StoreTrans = True
@@ -968,7 +968,9 @@ def run_rttov(profile_dict):
       or hirsRttov object to do this
     - for the BRDF atlas, since SEVIRI is the only VIS/NIR instrument we can
       use the single-instrument initialisation"""
-
+    irAtlas = pyrttov.Atlas()
+    irAtlas.AtlasPath = rttov_emis_path
+    irAtlas.loadIrEmisAtlas(month, ang_corr=True)
     sensor_rttov.irEmisAtlasSetup(month)
     # ------------------------------------------------------------------------
     # Call RTTOV
@@ -981,6 +983,22 @@ def run_rttov(profile_dict):
     Call the RTTOV direct model for each instrument:
     no arguments are supplied to runDirect so all loaded channels are
     simulated"""
+    surfemisrefl_tirs = np.zeros((2,nprofiles,nchan_tirs), dtype=np.float64)
+    sensor_rttov.SurfEmisRefl = surfemisrefl_tirs
+    surfemisrefl_tirs[:,:,:]    = -1.
+
+    # Call emissivity and BRDF atlases
+    try:
+        # Do not supply a channel list for SEVIRI: this returns emissivity/BRDF values for all
+        # *loaded* channels which is what is required
+        surfemisrefl_tirs[0,:,:] = irAtlas.getEmisBrdf(sensor_rttov)
+        print("Surface Emmisivity")
+        print(surfemisrefl_tirs.max())
+
+    except pyrttov.RttovError as e:
+        # If there was an error the emissivities/BRDFs will not have been modified so it
+        # is OK to continue and call RTTOV with calcemis/calcrefl set to TRUE everywhere
+        sys.stderr.write("Error calling atlas: {!s}".format(e))
 
     try:
         sensor_rttov.runDirect()
