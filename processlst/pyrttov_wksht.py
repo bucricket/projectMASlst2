@@ -569,7 +569,7 @@ class rttov:
         d = client.open_url(full_url, session=session)
         # surface presure [Pa]
         surface_pressure = d.PS
-        sp = np.squeeze(surface_pressure[self.hr, min_y:max_y, min_x:max_x] / 100)  # Pa to kPa
+        sp = np.squeeze(surface_pressure[self.hr, min_y:max_y, min_x:max_x] / 100.)  # Pa to kPa
         sprshp = np.reshape(sp, sp.shape[0] * sp.shape[1])
 
         # 2m air Temp (K)
@@ -884,7 +884,7 @@ class Landsat:
         print('done processing LST')
 
 
-def run_rttov(profile_dict, rtt):
+def run_rttov(profile_dict):
     nlevels = profile_dict['P'].shape[1]
     nprofiles = profile_dict['P'].shape[0]
     my_profiles = pyrttov.Profiles(nprofiles, nlevels)
