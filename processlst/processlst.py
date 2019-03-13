@@ -188,47 +188,64 @@ def get_lst(earth_user, earth_pass, atmos_corr=True):
         print(in_fn)
         meta = landsat_metadata(in_fn)
         sceneID = meta.LANDSAT_SCENE_ID
-        tif_file = os.path.join(landsat_temp, '%s_lst.tif' % sceneID)
-        bin_file = os.path.join(landsat_temp, "lndsr." + sceneID + ".cband6.bin")
-        if atmos_corr is True:
-            landsat = Landsat(in_fn, username=earth_user,
-                              password=earth_pass)
-            rttov_obj = rttov(in_fn, username=earth_user,
-                              password=earth_pass)
-            if not os.path.exists(tif_file):
-                profile_dict = rttov_obj.prepare_profile_data()
-                tiirs_rttov = run_rttov(profile_dict)
-                landsat.processLandsatLST(tiirs_rttov, profile_dict)
-        else:
-            # meta = landsat_metadata(in_fn)
-            productID = meta.LANDSAT_PRODUCT_ID
-            sceneID = meta.LANDSAT_SCENE_ID
-            in_tif_file = os.path.join(folder, "RAW_DATA", productID + "_bt_band10.tif")
-            g = gdal.Open(in_tif_file)
-            LST = g.ReadAsArray() / 10.
-            ls = GeoTIFF(
-                os.path.join(folder, "RAW_DATA", '%s_sr_band1.tif' % productID))
 
-            # write LST to a geoTiff
-
-            ls.clone(tif_file, LST)
+        # RTTOV and SHARPENING BROKE!!!================
+        lst_path = os.path.join(folder, "LST")
+        if not os.path.exists(lst_path):
+            os.mkdir(lst_path)
+        in_tif_file = os.path.join(folder, "RAW_DATA", productID + "_bt_band10.tif")
+        tifFile = os.path.join(lst_path, '%s_lstSharp.tiff' % sceneID)
+        g = gdal.Open(in_tif_file)
+        data = g.ReadAsArray() / 10.
+        data = (data - 273.15) * 100.
+        dd = data.astype(np.int16)
+        ls = GeoTIFF(
+            os.path.join(folder, "RAW_DATA", '%s_sr_band1.tif' % productID))
+        ls.clone(tifFile, dd)
+        # USING BT unsharpened for now!! ========
 
 
-        # subprocess.call(["gdal_translate", "-of", "ENVI", "%s" % tif_file, "%s" % bin_file])
-        subprocess.call("gdal_translate -of ENVI %s %s" % (tif_file, "%s" % bin_file), shell=True)
-
-        # =====sharpen the corrected LST==========================================
-        print(in_fn)
-        if os.path.exists(in_fn):
-            getSharpenedLST(in_fn, int(sat_str))
-
-            # =====move files to their respective directories and remove temp
-            landsat_LST = os.path.join(folder, 'LST')
-            if not os.path.exists(landsat_LST):
-                os.makedirs(landsat_LST)
-            bin_fn = os.path.join(landsat_temp, '%s.sharpened_band6.bin' % sceneID)
-            tif_fn = os.path.join(landsat_LST, '%s_lstSharp.tif' % sceneID)
-            subprocess.call(["gdal_translate", "-of", "GTiff", "%s" % bin_fn, "%s" % tif_fn])
+        # tif_file = os.path.join(landsat_temp, '%s_lst.tif' % sceneID)
+        # bin_file = os.path.join(landsat_temp, "lndsr." + sceneID + ".cband6.bin")
+        # if atmos_corr is True:
+        #     landsat = Landsat(in_fn, username=earth_user,
+        #                       password=earth_pass)
+        #     rttov_obj = rttov(in_fn, username=earth_user,
+        #                       password=earth_pass)
+        #     if not os.path.exists(tif_file):
+        #         profile_dict = rttov_obj.prepare_profile_data()
+        #         tiirs_rttov = run_rttov(profile_dict)
+        #         landsat.processLandsatLST(tiirs_rttov, profile_dict)
+        # else:
+        #     # meta = landsat_metadata(in_fn)
+        #     productID = meta.LANDSAT_PRODUCT_ID
+        #     sceneID = meta.LANDSAT_SCENE_ID
+        #     in_tif_file = os.path.join(folder, "RAW_DATA", productID + "_bt_band10.tif")
+        #     g = gdal.Open(in_tif_file)
+        #     LST = g.ReadAsArray() / 10.
+        #     ls = GeoTIFF(
+        #         os.path.join(folder, "RAW_DATA", '%s_sr_band1.tif' % productID))
+        #
+        #     # write LST to a geoTiff
+        #
+        #     ls.clone(tif_file, LST)
+        #
+        #
+        # # subprocess.call(["gdal_translate", "-of", "ENVI", "%s" % tif_file, "%s" % bin_file])
+        # subprocess.call("gdal_translate -of -q ENVI %s %s" % (tif_file, "%s" % bin_file), shell=True)
+        #
+        # # =====sharpen the corrected LST==========================================
+        # print(in_fn)
+        # if os.path.exists(in_fn):
+        #     getSharpenedLST(in_fn, int(sat_str))
+        #
+        #     # =====move files to their respective directories and remove temp
+        #     landsat_LST = os.path.join(folder, 'LST')
+        #     if not os.path.exists(landsat_LST):
+        #         os.makedirs(landsat_LST)
+        #     bin_fn = os.path.join(landsat_temp, '%s.sharpened_band6.bin' % sceneID)
+        #     tif_fn = os.path.join(landsat_LST, '%s_lstSharp.tif' % sceneID)
+        #     subprocess.call(["gdal_translate", "-of", "GTiff", "%s" % bin_fn, "%s" % tif_fn])
 
 
 def main():
